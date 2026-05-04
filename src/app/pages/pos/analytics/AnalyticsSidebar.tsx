@@ -1,4 +1,5 @@
 import { BarChart3, UtensilsCrossed, Users, Settings2, History } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 
 export type AnalyticsSection =
@@ -7,11 +8,11 @@ export type AnalyticsSection =
   | "customer-analysis"
   | "history";
 
-const SECTIONS: { id: AnalyticsSection; label: string; icon: typeof BarChart3 }[] = [
-  { id: "dashboard", label: "Sales Dashboard", icon: BarChart3 },
-  { id: "menu-analysis", label: "Menu Analysis", icon: UtensilsCrossed },
-  { id: "customer-analysis", label: "Customer Analysis", icon: Users },
-  { id: "history", label: "History", icon: History },
+const SECTIONS: { id: AnalyticsSection; labelKey: string; icon: typeof BarChart3 }[] = [
+  { id: "dashboard", labelKey: "analytics.sections.dashboard", icon: BarChart3 },
+  { id: "menu-analysis", labelKey: "analytics.sections.menuAnalysis", icon: UtensilsCrossed },
+  { id: "customer-analysis", labelKey: "analytics.sections.customerAnalysis", icon: Users },
+  { id: "history", labelKey: "analytics.sections.history", icon: History },
 ];
 
 interface AnalyticsSidebarProps {
@@ -22,19 +23,18 @@ interface AnalyticsSidebarProps {
 }
 
 export function AnalyticsSidebar({ active, onSelect, isMobileOpen, onMobileClose }: AnalyticsSidebarProps) {
+  const { t } = useTranslation();
   const tc = useThemeClasses();
 
   const sidebar = (
     <div className={`w-full h-full flex flex-col py-4 ${tc.isDark ? "bg-[#141820]" : "bg-white"}`}>
-      {/* Header */}
       <div className="px-4 mb-4">
         <div className="flex items-center gap-2 mb-1">
           <Settings2 className={`w-4 h-4 ${tc.subtext}`} />
-          <h2 className={`text-[1rem] ${tc.heading}`}>Analytics</h2>
+          <h2 className={`text-[1rem] ${tc.heading}`}>{t("analytics.sidebarTitle")}</h2>
         </div>
       </div>
 
-      {/* Navigation items */}
       <nav className="flex-1 px-2 space-y-0.5">
         {SECTIONS.map((s) => {
           const isActive = active === s.id;
@@ -46,13 +46,11 @@ export function AnalyticsSidebar({ active, onSelect, isMobileOpen, onMobileClose
                 onMobileClose();
               }}
               className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[0.9375rem] cursor-pointer transition-colors text-left ${
-                isActive
-                  ? "bg-blue-600 text-white"
-                  : `${tc.subtext} ${tc.hover}`
+                isActive ? "bg-blue-600 text-white" : `${tc.subtext} ${tc.hover}`
               }`}
             >
               <s.icon className="w-4 h-4 shrink-0" />
-              {s.label}
+              {t(s.labelKey)}
             </button>
           );
         })}
@@ -62,12 +60,10 @@ export function AnalyticsSidebar({ active, onSelect, isMobileOpen, onMobileClose
 
   return (
     <>
-      {/* Desktop sidebar */}
       <div className={`hidden sm:block w-[220px] shrink-0 border-r ${tc.border} h-full overflow-y-auto`}>
         {sidebar}
       </div>
 
-      {/* Mobile drawer */}
       {isMobileOpen && (
         <>
           <div className="fixed inset-0 bg-black/50 z-40 sm:hidden" onClick={onMobileClose} />

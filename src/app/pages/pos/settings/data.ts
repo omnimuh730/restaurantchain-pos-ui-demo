@@ -49,6 +49,7 @@ import {
   DoorClosed,
   TreePine,
   PanelTop,
+  LayoutGrid,
 } from "lucide-react";
 import type {
   SettingGroup,
@@ -64,39 +65,39 @@ import type {
 export const GROUPS: SettingGroup[] = [
   {
     id: "general",
-    label: "General",
+    labelKey: "settings.groups.general.label",
+    descKey: "settings.groups.general.desc",
     icon: Store,
-    description: "Restaurant info, hours, address",
   },
   {
     id: "menu",
-    label: "Menu Management",
+    labelKey: "settings.groups.menu.label",
+    descKey: "settings.groups.menu.desc",
     icon: UtensilsCrossed,
-    description: "Categories & menu items",
   },
   {
     id: "amenities",
-    label: "Amenities & Services",
+    labelKey: "settings.groups.amenities.label",
+    descKey: "settings.groups.amenities.desc",
     icon: UtensilsCrossed,
-    description: "Parking, WiFi, policies",
   },
   {
     id: "security",
-    label: "Security & Payments",
+    labelKey: "settings.groups.security.label",
+    descKey: "settings.groups.security.desc",
     icon: Shield,
-    description: "Password, cards, payment methods",
   },
   {
     id: "staff",
-    label: "Staff & Roles",
+    labelKey: "settings.groups.staff.label",
+    descKey: "settings.groups.staff.desc",
     icon: Users,
-    description: "Team members, permissions",
   },
   {
     id: "upgrade",
-    label: "Upgrade Plans",
+    labelKey: "settings.groups.upgrade.label",
+    descKey: "settings.groups.upgrade.desc",
     icon: Sparkles,
-    description: "Pro and Ultra plans",
   },
 ];
 
@@ -130,55 +131,27 @@ export const ROLE_CONFIG: Record<StaffRole, RoleConfig> = {
   },
 };
 
-export const ALL_PERMISSIONS: Record<string, PermissionItem[]> =
+export const ALL_PERMISSIONS: { groupId: string; items: PermissionItem[] }[] = [
   {
-    "PAGE ACCESS": [
-      {
-        id: "floor-plan",
-        label: "Floor Plan",
-        desc: "View floor plan & table layout",
-        icon: Store,
-      },
-      {
-        id: "orders",
-        label: "Orders",
-        desc: "Access orders page",
-        icon: UtensilsCrossed,
-      },
-      {
-        id: "kitchen",
-        label: "Kitchen",
-        desc: "Access kitchen page",
-        icon: ChefHat,
-      },
+    groupId: "pageAccess",
+    items: [
+      { id: "floor-plan", icon: Store },
+      { id: "orders", icon: UtensilsCrossed },
+      { id: "kitchen", icon: ChefHat },
     ],
-    ACTIONS: [
-      {
-        id: "reservations",
-        label: "Reservations",
-        desc: "Handle table reservations",
-        icon: Calendar,
-      },
-      {
-        id: "take-orders",
-        label: "Take Orders",
-        desc: "Create & process orders",
-        icon: UtensilsCrossed,
-      },
-      {
-        id: "process-payment",
-        label: "Process Payment",
-        desc: "Handle payments & refunds",
-        icon: CreditCard,
-      },
-      {
-        id: "menu-management",
-        label: "Menu Management",
-        desc: "Manage menu items & categories",
-        icon: UtensilsCrossed,
-      },
+  },
+  {
+    groupId: "actions",
+    items: [
+      { id: "reservations", icon: Calendar },
+      { id: "take-orders", icon: UtensilsCrossed },
+      { id: "process-payment", icon: CreditCard },
+      { id: "menu-management", icon: UtensilsCrossed },
+      { id: "manage-tables", icon: LayoutGrid },
+      { id: "settings-password", icon: Shield },
     ],
-  };
+  },
+];
 
 export const PERM_ICONS = [
   { id: "floor-plan", icon: Store },
@@ -208,6 +181,7 @@ export const ROLE_DEFAULTS: Record<
 export const INITIAL_STAFF: StaffMember[] = [
   {
     id: "2",
+    nameKey: "settings.mockStaff.jamieChen",
     name: "Jamie Chen",
     username: "jamie.chen",
     role: "Chef",
@@ -218,6 +192,7 @@ export const INITIAL_STAFF: StaffMember[] = [
   },
   {
     id: "3",
+    nameKey: "settings.mockStaff.samRivera",
     name: "Sam Rivera",
     username: "sam.rivera",
     role: "Waiter",
@@ -233,6 +208,7 @@ export const INITIAL_STAFF: StaffMember[] = [
   },
   {
     id: "4",
+    nameKey: "settings.mockStaff.taylorKim",
     name: "Taylor Kim",
     username: "taylor.kim",
     role: "Cashier",
@@ -253,6 +229,7 @@ export const INITIAL_STAFF: StaffMember[] = [
   },
   {
     id: "5",
+    nameKey: "settings.mockStaff.caseyPark",
     name: "Casey Park",
     username: "casey.park",
     role: "Cashier",
@@ -272,6 +249,7 @@ export const INITIAL_STAFF: StaffMember[] = [
   },
   {
     id: "6",
+    nameKey: "settings.mockStaff.rileyThompson",
     name: "Riley Thompson",
     username: "riley.t",
     role: "Waiter",
@@ -287,6 +265,7 @@ export const INITIAL_STAFF: StaffMember[] = [
   },
   {
     id: "7",
+    nameKey: "settings.mockStaff.morganDavis",
     name: "Morgan Davis",
     username: "morgan.d",
     role: "Chef",
@@ -297,6 +276,7 @@ export const INITIAL_STAFF: StaffMember[] = [
   },
   {
     id: "8",
+    nameKey: "settings.mockStaff.jordanLee",
     name: "Jordan Lee",
     username: "jordan.lee",
     role: "Waiter",
@@ -312,6 +292,7 @@ export const INITIAL_STAFF: StaffMember[] = [
   },
   {
     id: "9",
+    nameKey: "settings.mockStaff.alexNguyen",
     name: "Alex Nguyen",
     username: "alex.nguyen",
     role: "Waiter",
@@ -329,115 +310,104 @@ export const INITIAL_STAFF: StaffMember[] = [
 
 // ─── Amenities ───────────────────────────────────────────
 export const AMENITIES = [
-  { id: "parking", label: "Parking", icon: CircleParking },
-  { id: "valet", label: "Valet", icon: Car },
-  { id: "wifi", label: "Free WiFi", icon: Wifi },
+  { id: "parking", icon: CircleParking },
+  { id: "valet", icon: Car },
+  { id: "wifi", icon: Wifi },
   {
     id: "credit-cards",
-    label: "Credit Cards",
     icon: CreditCard,
   },
-  { id: "cash", label: "Cash", icon: HandCoins },
-  { id: "mobile-pay", label: "Mobile Pay", icon: Phone },
+  { id: "cash", icon: HandCoins },
+  { id: "mobile-pay", icon: Phone },
   {
     id: "wheelchair",
-    label: "Wheelchair",
     icon: Accessibility,
   },
-  { id: "high-chairs", label: "High Chairs", icon: Baby },
+  { id: "high-chairs", icon: Baby },
   {
     id: "kids-menu",
-    label: "Kids Menu",
     icon: UtensilsCrossed,
   },
-  { id: "dog-friendly", label: "Dog Friendly", icon: Dog },
-  { id: "live-music", label: "Live Music", icon: Music },
-  { id: "dress-code", label: "Dress Code", icon: UserCheck },
-  { id: "smoking", label: "Smoking Area", icon: Cigarette },
+  { id: "dog-friendly", icon: Dog },
+  { id: "live-music", icon: Music },
+  { id: "dress-code", icon: UserCheck },
+  { id: "smoking", icon: Cigarette },
   {
     id: "private-events",
-    label: "Private Events",
     icon: PartyPopper,
   },
-  { id: "catering", label: "Catering", icon: ChefHat },
-  { id: "delivery", label: "Delivery", icon: Truck },
-  { id: "takeout", label: "Takeout", icon: UtensilsCrossed },
-  { id: "reservations", label: "Reservations", icon: Calendar },
-  { id: "walk-ins", label: "Walk-ins", icon: Users },
-  { id: "outdoor", label: "Outdoor", icon: Armchair },
+  { id: "catering", icon: ChefHat },
+  { id: "delivery", icon: Truck },
+  { id: "takeout", icon: UtensilsCrossed },
+  { id: "reservations", icon: Calendar },
+  { id: "walk-ins", icon: Users },
+  { id: "outdoor", icon: Armchair },
   {
     id: "heated-patio",
-    label: "Heated Patio",
     icon: Thermometer,
   },
-  { id: "ac", label: "A/C", icon: Thermometer },
+  { id: "ac", icon: Thermometer },
   {
     id: "multilingual",
-    label: "Multi-Lingual",
     icon: Languages,
   },
-  { id: "bar-lounge", label: "Bar / Lounge", icon: GlassWater },
+  { id: "bar-lounge", icon: GlassWater },
 ];
 
 // ─── Cuisine ─────────────────────────────────────────────
 export const CUISINES = [
-  { id: "grilled-beef", label: "Grilled Beef", icon: Flame },
+  { id: "grilled-beef", icon: Flame },
   {
     id: "grilled-pork",
-    label: "Grilled Pork",
     icon: Drumstick,
   },
-  { id: "bar-pub", label: "Bar & Pub", icon: Beer },
-  { id: "meat", label: "Meat", icon: Beef },
-  { id: "fine-dining", label: "Fine Dining", icon: Gem },
-  { id: "seafood", label: "Seafood", icon: Fish },
-  { id: "korean", label: "Korean", icon: UtensilsCrossed },
-  { id: "western", label: "Western Cuisine", icon: Utensils },
-  { id: "wine", label: "Wine", icon: Wine },
-  { id: "brunch", label: "Brunch", icon: Coffee },
-  { id: "vegan", label: "Vegan", icon: Leaf },
-  { id: "steakhouse", label: "Steakhouse", icon: Beef },
-  { id: "fusion", label: "Fusion", icon: Sparkles },
-  { id: "healthy", label: "Healthy", icon: Salad },
-  { id: "noodles-soup", label: "Noodles & Soup", icon: Soup },
-  { id: "family-meal", label: "Family Meal", icon: Users },
+  { id: "bar-pub", icon: Beer },
+  { id: "meat", icon: Beef },
+  { id: "fine-dining", icon: Gem },
+  { id: "seafood", icon: Fish },
+  { id: "korean", icon: UtensilsCrossed },
+  { id: "western", icon: Utensils },
+  { id: "wine", icon: Wine },
+  { id: "brunch", icon: Coffee },
+  { id: "vegan", icon: Leaf },
+  { id: "steakhouse", icon: Beef },
+  { id: "fusion", icon: Sparkles },
+  { id: "healthy", icon: Salad },
+  { id: "noodles-soup", icon: Soup },
+  { id: "family-meal", icon: Users },
 ];
 
 // ─── Occasion & Vibe ─────────────────────────────────────
 export const OCCASIONS = [
-  { id: "date-night", label: "Date Night", icon: Heart },
+  { id: "date-night", icon: Heart },
   {
     id: "business-dinner",
-    label: "Business Dinner",
     icon: Briefcase,
   },
-  { id: "celebration", label: "Celebration", icon: Cake },
+  { id: "celebration", icon: Cake },
   {
     id: "casual-dining",
-    label: "Casual Dining",
     icon: UtensilsCrossed,
   },
-  { id: "romantic", label: "Romantic", icon: Heart },
+  { id: "romantic", icon: Heart },
   {
     id: "family-friendly",
-    label: "Family-friendly",
     icon: Baby,
   },
-  { id: "late-night", label: "Late Night", icon: Moon },
-  { id: "quick-bite", label: "Quick Bite", icon: Zap },
+  { id: "late-night", icon: Moon },
+  { id: "quick-bite", icon: Zap },
 ];
 
 // ─── Seating Preference ──────────────────────────────────
 export const SEATING_PREFERENCES = [
-  { id: "dining-hall", label: "Dining Hall", icon: Home },
+  { id: "dining-hall", icon: Home },
   {
     id: "private-room",
-    label: "Private Room",
     icon: DoorClosed,
   },
-  { id: "terrace", label: "Terrace", icon: TreePine },
-  { id: "window-seat", label: "Window Seat", icon: PanelTop },
-  { id: "bar", label: "Bar", icon: GlassWater },
+  { id: "terrace", icon: TreePine },
+  { id: "window-seat", icon: PanelTop },
+  { id: "bar", icon: GlassWater },
 ];
 
 // ─── Payment Cards ───────────────────────────────────────
@@ -738,24 +708,24 @@ export const INITIAL_MENU_CATEGORIES: MenuCategory[] = [
 ];
 
 // ─── Upgrade Features ────────────────────────────────────
-export const PRO_FEATURES = [
-  "Up to 20 staff members",
-  "Advanced analytics & reports",
-  "Multi-floor plan support",
-  "Priority email support",
-  "Custom receipt branding",
-  "Table reservation system",
-];
-export const ULTRA_FEATURES = [
-  "Everything in Pro",
-  "Unlimited staff members",
-  "Multi-location support",
-  "24/7 priority support",
-  "API access & integrations",
-  "Custom domain & branding",
-  "Advanced inventory tracking",
-  "Dedicated account manager",
-];
+export const PRO_FEATURE_IDS = [
+  "staff20",
+  "analytics",
+  "multiFloor",
+  "emailSupport",
+  "receiptBranding",
+  "reservations",
+] as const;
+export const ULTRA_FEATURE_IDS = [
+  "allPro",
+  "staffUnlimited",
+  "multiLocation",
+  "support247",
+  "api",
+  "domain",
+  "inventory",
+  "accountManager",
+] as const;
 
 export const MENU_TILE_COLORS = [
   "bg-blue-500",

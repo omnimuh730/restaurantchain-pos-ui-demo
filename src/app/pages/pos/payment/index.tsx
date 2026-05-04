@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router";
 import { QRCodeSVG } from "qrcode.react";
 import { motion } from "motion/react";
@@ -25,10 +26,12 @@ interface PaymentPageProps {
 
 type Method = "cash" | "credit" | "mix";
 
-function AmountPair({ krw, usd }: { krw: number; usd: number }) {
+const PAYMENT_STEP_KEYS = ["stepVerifyCard", "stepVerifyPwd", "stepBalance", "stepAuth", "stepApproved"] as const;
+
+function AmountPair({ krw, usd, zeroLabel }: { krw: number; usd: number; zeroLabel: string }) {
   const showKrw = krw > 0;
   const showUsd = usd > 0;
-  if (!showKrw && !showUsd) return <span className="text-red-600">$0.00</span>;
+  if (!showKrw && !showUsd) return <span className="text-red-600">{zeroLabel}</span>;
   return (
     <>
       {showKrw && <span className="text-blue-600">₩{Math.round(krw).toLocaleString()}</span>}
@@ -39,6 +42,7 @@ function AmountPair({ krw, usd }: { krw: number; usd: number }) {
 }
 
 export default function PaymentPage(props: PaymentPageProps = {}) {
+  const { t } = useTranslation();
   const tc = useThemeClasses();
   const navigate = useNavigate();
   const { state } = useLocation() as { state: PaymentState | null };
@@ -68,14 +72,6 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
   const [cardPassword, setCardPassword] = useState("");
   const [processingStep, setProcessingStep] = useState<number | null>(null);
 
-  const processingSteps = [
-    "Verifying card number…",
-    "Verifying password…",
-    "Checking available balance…",
-    "Authorizing payment…",
-    "Payment approved",
-  ];
-
   const VALID_CARD = "1111111111111111";
   const VALID_PWD = "12345678";
   const BALANCE_LIMIT_KRW = 1_000_000;
@@ -83,24 +79,24 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
 
   const failure = useMemo(() => {
     if (processingStep === null) return null;
-    if (cardNumber !== VALID_CARD) return { idx: 0, msg: "Card number not recognized. Please check the card number and try again." };
-    if (cardPassword !== VALID_PWD) return { idx: 1, msg: "Incorrect password. Please try again." };
-    if (totalKrw > BALANCE_LIMIT_KRW || totalUsd > BALANCE_LIMIT_USD) return { idx: 2, msg: "Insufficient balance on this card." };
+    if (cardNumber !== VALID_CARD) return { idx: 0, msgKey: "paymentPage.errCard" as const };
+    if (cardPassword !== VALID_PWD) return { idx: 1, msgKey: "paymentPage.errPwd" as const };
+    if (totalKrw > BALANCE_LIMIT_KRW || totalUsd > BALANCE_LIMIT_USD) return { idx: 2, msgKey: "paymentPage.errBalance" as const };
     return null;
   }, [processingStep, cardNumber, cardPassword, totalKrw, totalUsd]);
 
   useEffect(() => {
     if (processingStep === null) return;
     if (failure && processingStep === failure.idx) return;
-    if (processingStep >= processingSteps.length - 1) {
-      const t = setTimeout(() => {
+    if (processingStep >= PAYMENT_STEP_KEYS.length - 1) {
+      const timer = setTimeout(() => {
         setProcessingStep(null);
         setDone(true);
       }, 700);
-      return () => clearTimeout(t);
+      return () => clearTimeout(timer);
     }
-    const t = setTimeout(() => setProcessingStep((s) => (s ?? 0) + 1), 800);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setProcessingStep((s) => (s ?? 0) + 1), 800);
+    return () => clearTimeout(timer);
   }, [processingStep, failure]);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
@@ -263,12 +259,12 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
             className={`w-9 h-9 rounded-lg flex items-center justify-center cursor-pointer transition-colors ${
               tc.isDark ? "bg-slate-800 hover:bg-slate-700 text-slate-300" : "bg-white hover:bg-slate-50 text-slate-600 border border-slate-200"
             }`}
-            aria-label="Back"
+            aria-label={t("paymentPage.back")}
           >
             <ArrowLeft className="w-4.5 h-4.5" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className={`text-[1.125rem] ${tc.heading}`}>Payment</h1>
+            <h1 className={`text-[1.125rem] ${tc.heading}`}>{t("paymentPage.title")}</h1>
             <p className={`text-[0.75rem] ${tc.subtext}`}>{tableLabel} · {checkNumber}</p>
           </div>
           
@@ -287,15 +283,15 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
           <>
             {/* Method selector */}
             <div className="flex gap-2 mb-6">
-              {methodBtn("cash", "Cash", Banknote)}
-              {methodBtn("credit", "Credit", CreditCard)}
-              {methodBtn("mix", "Mix", Split)}
+              {methodBtn("cash", t("paymentPage.cash"), Banknote)}
+              {methodBtn("credit", t("paymentPage.credit"), CreditCard)}
+              {methodBtn("mix", t("paymentPage.mix"), Split)}
             </div>
 
             {/* Method content */}
             {method === "cash" && (
               <div className="flex-1 flex flex-col items-center justify-center mb-6">
-                <img src={cashImage} alt="Cash payment" className="w-58 h-58 object-contain [filter:drop-shadow(0_0_0.4px_#2563eb)_drop-shadow(0_0_0.4px_#2563eb)]" />
+                <img src={cashImage} alt={t("paymentPage.cashAlt")} className="w-58 h-58 object-contain [filter:drop-shadow(0_0_0.4px_#2563eb)_drop-shadow(0_0_0.4px_#2563eb)]" />
               </div>
             )}
 
@@ -320,7 +316,7 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
                     <div className="w-full shrink-0 flex justify-center px-4">
                       <div className={`w-full max-w-xs rounded-xl p-5 border ${tc.isDark ? "border-slate-700 bg-slate-800/40" : "border-slate-200 bg-white"} space-y-4`}>
                         <div>
-                          <label className={`block mb-1.5 ${tc.subtle}`}>Card Number</label>
+                          <label className={`block mb-1.5 ${tc.subtle}`}>{t("paymentPage.cardNumber")}</label>
                           <input
                             type="text"
                             inputMode="numeric"
@@ -341,7 +337,7 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
                           />
                         </div>
                         <div>
-                          <label className={`block mb-1.5 ${tc.subtle}`}>Password</label>
+                          <label className={`block mb-1.5 ${tc.subtle}`}>{t("paymentPage.password")}</label>
                           <input
                             type="text"
                             inputMode="numeric"
@@ -366,7 +362,7 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
                           onClick={() => setProcessingStep(0)}
                           className="w-full py-2.5 rounded-lg bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
                         >
-                          Proceed
+                          {t("paymentPage.proceed")}
                         </button>
                       </div>
                     </div>
@@ -378,13 +374,13 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
                       type="button"
                       onClick={() => setCreditView(0)}
                       className={`w-2 h-2 rounded-full transition-colors ${creditView === 0 ? "bg-blue-600" : tc.isDark ? "bg-slate-600" : "bg-slate-300"}`}
-                      aria-label="QR view"
+                      aria-label={t("paymentPage.qrView")}
                     />
                     <button
                       type="button"
                       onClick={() => setCreditView(1)}
                       className={`w-2 h-2 rounded-full transition-colors ${creditView === 1 ? "bg-blue-600" : tc.isDark ? "bg-slate-600" : "bg-slate-300"}`}
-                      aria-label="Manual entry view"
+                      aria-label={t("paymentPage.manualEntry")}
                     />
                   </div>
                   <div className="flex items-center gap-2 text-blue-600 select-none">
@@ -398,9 +394,7 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
                         {"<<"}
                       </motion.span>
                     )}
-                    <span className="text-[0.8125rem]">
-                      {creditView === 0 ? "Swipe to card payment" : "Swipe back to QR"}
-                    </span>
+                    <span className="text-[0.8125rem]">{creditView === 0 ? t("paymentPage.swipeToCard") : t("paymentPage.swipeToQr")}</span>
                     {creditView === 0 && (
                       <motion.span
                         className="tracking-tighter"
@@ -422,17 +416,17 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
                   {/* Cash column */}
                   <div className={`p-4 border-r ${tc.isDark ? "border-slate-700" : "border-slate-200"}`}>
                     <p className={`text-[0.875rem] ${tc.heading} mb-3 text-[16px] flex items-center justify-center gap-1.5`}>
-                      <Banknote className="w-4 h-4" /> Cash
+                      <Banknote className="w-4 h-4" /> {t("paymentPage.cash")}
                     </p>
                     <div className="space-y-3">
                       {hasKrw && (
                         <div onFocus={() => setLastEdited((s) => ({ ...s, krw: "cash" }))}>
-                          {amountInput(cashKrw, (v) => { setLastEdited((s) => ({ ...s, krw: "cash" })); setCashKrw(v); }, "Domestic", "₩", 100, "0")}
+                          {amountInput(cashKrw, (v) => { setLastEdited((s) => ({ ...s, krw: "cash" })); setCashKrw(v); }, t("paymentPage.domestic"), "₩", 100, "0")}
                         </div>
                       )}
                       {hasUsd && (
                         <div onFocus={() => setLastEdited((s) => ({ ...s, usd: "cash" }))}>
-                          {amountInput(cashUsd, (v) => { setLastEdited((s) => ({ ...s, usd: "cash" })); setCashUsd(v); }, "Foreign", "$", 0.01, "0.00")}
+                          {amountInput(cashUsd, (v) => { setLastEdited((s) => ({ ...s, usd: "cash" })); setCashUsd(v); }, t("paymentPage.foreign"), "$", 0.01, "0.00")}
                         </div>
                       )}
                     </div>
@@ -440,17 +434,17 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
                   {/* Credit column */}
                   <div className="p-4">
                     <p className={`text-[0.875rem] ${tc.heading} mb-3 text-[16px] flex items-center justify-center gap-1.5`}>
-                      <CreditCard className="w-4 h-4" /> Credit
+                      <CreditCard className="w-4 h-4" /> {t("paymentPage.credit")}
                     </p>
                     <div className="space-y-3">
                       {hasKrw && (
                         <div onFocus={() => setLastEdited((s) => ({ ...s, krw: "credit" }))}>
-                          {amountInput(creditKrw, (v) => { setLastEdited((s) => ({ ...s, krw: "credit" })); setCreditKrw(v); }, "Domestic", "₩", 100, "0")}
+                          {amountInput(creditKrw, (v) => { setLastEdited((s) => ({ ...s, krw: "credit" })); setCreditKrw(v); }, t("paymentPage.domestic"), "₩", 100, "0")}
                         </div>
                       )}
                       {hasUsd && (
                         <div onFocus={() => setLastEdited((s) => ({ ...s, usd: "credit" }))}>
-                          {amountInput(creditUsd, (v) => { setLastEdited((s) => ({ ...s, usd: "credit" })); setCreditUsd(v); }, "Foreign", "$", 0.01, "0.00")}
+                          {amountInput(creditUsd, (v) => { setLastEdited((s) => ({ ...s, usd: "credit" })); setCreditUsd(v); }, t("paymentPage.foreign"), "$", 0.01, "0.00")}
                         </div>
                       )}
                     </div>
@@ -458,12 +452,12 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
                 </div>
                 {!mixKrwOk && (
                   <p className="text-[0.75rem] text-red-500 mb-2">
-                    Cash + credit must equal <span className="text-blue-600">₩{Math.round(totalKrw).toLocaleString()}</span>
+                    {t("paymentPage.mixMustEqualKrw", { amount: `₩${Math.round(totalKrw).toLocaleString()}` })}
                   </p>
                 )}
                 {!mixUsdOk && (
                   <p className="text-[0.75rem] text-red-500 mb-2">
-                    Cash + credit must equal <span className="text-red-600">${totalUsd.toFixed(2)}</span>
+                    {t("paymentPage.mixMustEqualUsd", { amount: `$${totalUsd.toFixed(2)}` })}
                   </p>
                 )}
 
@@ -490,7 +484,7 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
                     : "bg-slate-200 text-slate-400 cursor-not-allowed"
               }`}
             >
-              Confirm Payment
+              {t("paymentPage.confirm")}
             </button>
           </>
         )}
@@ -500,15 +494,23 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
             <div className="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center mb-3 shadow-lg">
               <Check className="w-7 h-7" strokeWidth={2.5} />
             </div>
-            <h2 className={`text-[1.125rem] ${tc.heading}`}>Payment complete</h2>
+            <h2 className={`text-[1.125rem] ${tc.heading}`}>{t("paymentPage.completeTitle")}</h2>
             <p className={`text-[0.8125rem] ${tc.subtext} mt-1`}>
-              {method === "cash" && <>Cash <AmountPair krw={cashKrwNum} usd={cashUsdNum} /></>}
-              {method === "credit" && <>Credit <AmountPair krw={totalKrw} usd={totalUsd} /></>}
+              {method === "cash" && (
+                <>
+                  {t("paymentPage.cashLine")} <AmountPair krw={cashKrwNum} usd={cashUsdNum} zeroLabel={t("paymentPage.zeroUsd")} />
+                </>
+              )}
+              {method === "credit" && (
+                <>
+                  {t("paymentPage.creditLine")} <AmountPair krw={totalKrw} usd={totalUsd} zeroLabel={t("paymentPage.zeroUsd")} />
+                </>
+              )}
               {method === "mix" && (
                 <>
-                  Cash <AmountPair krw={cashKrwNum} usd={cashUsdNum} />
+                  {t("paymentPage.cashLine")} <AmountPair krw={cashKrwNum} usd={cashUsdNum} zeroLabel={t("paymentPage.zeroUsd")} />
                   {" · "}
-                  Credit <AmountPair krw={creditKrwNum} usd={creditUsdNum} />
+                  {t("paymentPage.creditLine")} <AmountPair krw={creditKrwNum} usd={creditUsdNum} zeroLabel={t("paymentPage.zeroUsd")} />
                 </>
               )}
             </p>
@@ -516,7 +518,7 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
               onClick={finish}
               className="mt-5 w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[0.875rem] cursor-pointer transition-colors inline-flex items-center justify-center gap-2"
             >
-              <Check className="w-4 h-4" /> Done
+              <Check className="w-4 h-4" /> {t("paymentPage.done")}
             </button>
           </div>
         )}
@@ -536,14 +538,15 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
                   <Check className="w-4 h-4 text-white" />
                 </div>
               )}
-              <h3 className={tc.heading}>{failure && processingStep === failure.idx ? "Payment Failed" : "Card Payment"}</h3>
+              <h3 className={tc.heading}>{failure && processingStep === failure.idx ? t("paymentPage.paymentFailed") : t("paymentPage.cardPayment")}</h3>
             </div>
             <ul className="space-y-2">
-              {processingSteps.map((label, i) => {
+              {PAYMENT_STEP_KEYS.map((stepKey, i) => {
+                const label = t(`paymentPage.${stepKey}`);
                 const isFailed = failure && i === failure.idx && processingStep === failure.idx;
                 const status = isFailed ? "failed" : i < processingStep ? "done" : i === processingStep ? "active" : "pending";
                 return (
-                  <li key={label} className="flex items-center gap-2">
+                  <li key={stepKey} className="flex items-center gap-2">
                     {status === "done" && <Check className="w-4 h-4 text-blue-600" />}
                     {status === "active" && <span className="w-3 h-3 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />}
                     {status === "failed" && <X className="w-4 h-4 text-red-600" />}
@@ -556,7 +559,7 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
             {failure && processingStep === failure.idx && (
               <div className={`mt-4 flex items-start gap-2 p-3 rounded-lg ${tc.isDark ? "bg-red-950/40 border border-red-900" : "bg-red-50 border border-red-200"}`}>
                 <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
-                <p className="text-[0.8125rem] text-red-600">{failure.msg}</p>
+                <p className="text-[0.8125rem] text-red-600">{t(failure.msgKey)}</p>
               </div>
             )}
             {failure && processingStep === failure.idx && (
@@ -566,7 +569,7 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
                   onClick={() => setProcessingStep(null)}
                   className={`px-4 py-2 rounded-lg ${tc.isDark ? "bg-slate-700 hover:bg-slate-600 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700"} transition-colors`}
                 >
-                  Close
+                  {t("paymentPage.close")}
                 </button>
               </div>
             )}

@@ -20,20 +20,21 @@ import { toast } from "sonner";
 import {
   AnalyticsFilled, FloorPlanFilled, OrdersFilled, KitchenFilled, SettingsFilled,
 } from "./components/NavIcons";
+import { useTranslation } from "react-i18next";
 
 const NAV_ITEMS = [
-  { id: "analytics", label: "Analytics", icon: AnalyticsFilled },
-  { id: "floor-plan", label: "Floor Plan", icon: FloorPlanFilled },
-  { id: "orders", label: "Orders", icon: OrdersFilled },
-  { id: "kitchen", label: "Kitchen", icon: KitchenFilled },
-  { id: "settings", label: "Settings", icon: SettingsFilled },
-];
+  { id: "analytics", icon: AnalyticsFilled },
+  { id: "floor-plan", icon: FloorPlanFilled },
+  { id: "orders", icon: OrdersFilled },
+  { id: "kitchen", icon: KitchenFilled },
+  { id: "settings", icon: SettingsFilled },
+] as const;
 
-const ROLE_OPTIONS: { role: ActiveRole; icon: typeof ShieldCheck; label: string }[] = [
-  { role: "Admin", icon: ShieldCheck, label: "Admin" },
-  { role: "Cashier", icon: Wallet, label: "Cashier" },
-  { role: "Chef", icon: ChefHat, label: "Chef" },
-  { role: "Waiter", icon: UserCheck, label: "Waiter" },
+const ROLE_OPTIONS: { role: ActiveRole; icon: typeof ShieldCheck }[] = [
+  { role: "Admin", icon: ShieldCheck },
+  { role: "Cashier", icon: Wallet },
+  { role: "Chef", icon: ChefHat },
+  { role: "Waiter", icon: UserCheck },
 ];
 
 function RouteOutlet() {
@@ -55,6 +56,7 @@ function RouteOutlet() {
 }
 
 function POSLayoutInner() {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { isDark, toggle: toggleTheme, role: currentRole, setRole: setCurrentRole } = useTheme();
@@ -123,13 +125,13 @@ function POSLayoutInner() {
               className="text-[0.9375rem] tracking-tight"
               style={{ color: isDark ? "#e5e7eb" : "#1e293b" }}
             >
-              Glass Onion
+              {t("brand.name")}
             </span>
             <span
               className="text-[0.625rem] tracking-wider uppercase"
               style={{ color: isDark ? "#4A5463" : "#94a3b8" }}
             >
-              POS System
+              {t("brand.subtitle")}
             </span>
           </div>
         </div>
@@ -144,7 +146,7 @@ function POSLayoutInner() {
               color: isDark ? "#9ca3af" : "#64748b",
               background: isDark ? "rgba(58,63,77,0.5)" : "rgba(241,245,249,1)",
             }}
-            title="Lock screen"
+            title={t("header.lockTitle")}
           >
             <Lock className="w-5 h-5" />
           </button>
@@ -157,7 +159,7 @@ function POSLayoutInner() {
               color: isDark ? "#9ca3af" : "#64748b",
               background: isDark ? "rgba(58,63,77,0.5)" : "rgba(241,245,249,1)",
             }}
-            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            title={isDark ? t("header.themeLight") : t("header.themeDark")}
           >
             {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
@@ -181,7 +183,7 @@ function POSLayoutInner() {
               >
                 <RoleIcon className="w-4 h-4" />
               </div>
-              <span className="text-[0.8125rem] hidden sm:block">{currentRole}</span>
+              <span className="text-[0.8125rem] hidden sm:block">{t(`roles.${currentRole}`)}</span>
               <ChevronDown
                 className="w-4 h-4 transition-transform"
                 style={{
@@ -204,9 +206,9 @@ function POSLayoutInner() {
                   className="px-3.5 py-2.5 text-[0.6875rem] uppercase tracking-wider"
                   style={{ color: isDark ? "#6b7280" : "#94a3b8" }}
                 >
-                  Switch Role
+                  {t("header.switchRole")}
                 </div>
-                {ROLE_OPTIONS.map(({ role, icon: Icon, label }) => {
+                {ROLE_OPTIONS.map(({ role, icon: Icon }) => {
                   const isActive = currentRole === role;
                   const permCount = ROLE_NAV_ACCESS[role].length;
                   return (
@@ -247,12 +249,12 @@ function POSLayoutInner() {
                         <Icon className="w-4 h-4" />
                       </div>
                       <div className="flex flex-col items-start gap-0.5">
-                        <span>{label}</span>
+                        <span>{t(`roles.${role}`)}</span>
                         <span
                           className="text-[0.5625rem]"
                           style={{ color: isDark ? "#6b7280" : "#94a3b8" }}
                         >
-                          {permCount} page{permCount !== 1 ? "s" : ""}
+                          {t("header.pagesCount", { count: permCount })}
                         </span>
                       </div>
                       {isActive && (
@@ -280,7 +282,7 @@ function POSLayoutInner() {
           borderTop: isDark ? "1px solid #222C38" : "1px solid #cbd5e1",
         }}
       >
-        {allowedNav.map(({ id, label, icon: Icon }) => {
+        {allowedNav.map(({ id, icon: Icon }) => {
           const isActive = activePath === id;
           const to = `/pos/${id}`;
           const badgeCount = mergedBadges[id] ?? 0;
@@ -306,7 +308,7 @@ function POSLayoutInner() {
                   </span>
                 )}
               </span>
-              <span className="text-[0.6875rem] leading-tight">{label}</span>
+              <span className="text-[0.6875rem] leading-tight">{t(`nav.${id}`)}</span>
             </button>
           );
         })}
@@ -319,6 +321,7 @@ function POSLayoutInner() {
 }
 
 function ToastClearAll() {
+  const { t } = useTranslation();
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -348,9 +351,9 @@ function ToastClearAll() {
         color: "#1d4ed8",
       }}
       className="fixed right-5 top-2 px-3 py-[5px] rounded-full text-[0.6875rem] cursor-pointer hover:brightness-105 active:scale-95 transition-all"
-      aria-label="Clear all notifications"
+      aria-label={t("toast.clearAllAria")}
     >
-      Clear All
+      {t("toast.clearAll")}
     </button>
   );
 }

@@ -5,185 +5,257 @@ function makeTime(minsAgo: number) {
 }
 
 export const INITIAL_ORDERS: KitchenOrder[] = [
-  // ── In Progress ──
   {
-    id: "k1", table: "Table 3", status: "in-progress", orderedAt: makeTime(20),
+    id: "k1",
+    tableId: "T3",
+    status: "in-progress",
+    orderedAt: makeTime(20),
     items: [
-      { id: "k1a", name: "Seafood Pasta", qty: 2, done: false },
-      { id: "k1b", name: "White Rice Cake", qty: 1, done: true },
-      { id: "k1c", name: "Mango Juice", qty: 3, done: true },
-      { id: "k1d", name: "Carbonara Pasta", qty: 2, done: false, previouslyCompleted: true },
+      { id: "k1a", itemKey: "seafood-pasta", qty: 2, done: false },
+      { id: "k1b", itemKey: "white-rice-cake", qty: 1, done: true },
+      { id: "k1c", itemKey: "mango-juice", qty: 3, done: true },
+      { id: "k1d", itemKey: "carbonara-pasta", qty: 2, done: false, previouslyCompleted: true },
     ],
   },
   {
-    id: "k2", table: "Table 1", status: "in-progress", orderedAt: makeTime(10),
+    id: "k2",
+    tableId: "T1",
+    status: "in-progress",
+    orderedAt: makeTime(10),
     items: [
-      { id: "k2a", name: "T-bone Steak", qty: 1, done: false, modifier: "Medium Rare" },
-      { id: "k2b", name: "Sirloin Steak", qty: 2, done: false, previouslyCompleted: true },
+      { id: "k2a", itemKey: "t-bone-steak", qty: 1, done: false, modifierKey: "medium-rare" },
+      { id: "k2b", itemKey: "sirloin-steak", qty: 2, done: false, previouslyCompleted: true },
     ],
   },
   {
-    id: "k3", table: "Table 17", status: "in-progress", orderedAt: makeTime(1),
+    id: "k3",
+    tableId: "T17",
+    status: "in-progress",
+    orderedAt: makeTime(1),
     items: [
-      { id: "k3a", name: "Ribeye Steak", qty: 1, done: true },
-      { id: "k3b", name: "New York Strip Steak", qty: 1, done: true },
-      { id: "k3c", name: "Sirloin Steak", qty: 1, done: true, modifier: "Well Done" },
+      { id: "k3a", itemKey: "ribeye", qty: 1, done: true },
+      { id: "k3b", itemKey: "new-york-strip", qty: 1, done: true },
+      { id: "k3c", itemKey: "sirloin-steak", qty: 1, done: true, modifierKey: "well-done" },
     ],
   },
   {
-    id: "k4", table: "Table 13", status: "in-progress", orderedAt: makeTime(0.5),
+    id: "k4",
+    tableId: "T13",
+    status: "in-progress",
+    orderedAt: makeTime(0.5),
     items: [
-      { id: "k4a", name: "Mushroom Risotto", qty: 1, done: false },
-      { id: "k4b", name: "Caesar Salad", qty: 2, done: false },
-      { id: "k4c", name: "Garlic Bread", qty: 1, done: true },
+      { id: "k4a", itemKey: "mushroom-risotto", qty: 1, done: false },
+      { id: "k4b", itemKey: "caesar-salad", qty: 2, done: false },
+      { id: "k4c", itemKey: "garlic-bread", qty: 1, done: true },
     ],
   },
   {
-    id: "k5", table: "Table 7", status: "in-progress", orderedAt: makeTime(30),
+    id: "k5",
+    tableId: "T7",
+    status: "in-progress",
+    orderedAt: makeTime(30),
     items: [
-      { id: "k5a", name: "Pad Thai", qty: 2, done: true },
-      { id: "k5b", name: "Green Curry", qty: 1, done: false },
-      { id: "k5c", name: "Tom Yum Soup", qty: 1, done: true },
+      { id: "k5a", itemKey: "pad-thai", qty: 2, done: true },
+      { id: "k5b", itemKey: "thai-green-curry", qty: 1, done: false },
+      { id: "k5c", itemKey: "tom-yum-soup", qty: 1, done: true },
     ],
   },
   {
-    id: "k6", table: "Table 9", status: "in-progress", orderedAt: makeTime(18),
+    id: "k6",
+    tableId: "T9",
+    status: "in-progress",
+    orderedAt: makeTime(18),
     items: [
-      { id: "k6a", name: "Kung Pao Chicken", qty: 1, done: false },
-      { id: "k6b", name: "Fried Rice", qty: 2, done: true },
-      { id: "k6c", name: "Spring Rolls", qty: 3, done: true },
+      { id: "k6a", itemKey: "kung-pao-chicken", qty: 1, done: false },
+      { id: "k6b", itemKey: "fried-rice", qty: 2, done: true },
+      { id: "k6c", itemKey: "spring-rolls-generic", qty: 3, done: true },
     ],
   },
   {
-    id: "k7", table: "Table 5", status: "in-progress", orderedAt: makeTime(2),
+    id: "k7",
+    tableId: "T5",
+    status: "in-progress",
+    orderedAt: makeTime(2),
     items: [
-      { id: "k7a", name: "Salmon Sushi", qty: 4, done: false },
-      { id: "k7b", name: "Miso Soup", qty: 2, done: false },
+      { id: "k7a", itemKey: "salmon-sushi", qty: 4, done: false },
+      { id: "k7b", itemKey: "miso-soup", qty: 2, done: false },
     ],
   },
   {
-    id: "k8", table: "Table 11", status: "in-progress", orderedAt: makeTime(6),
+    id: "k8",
+    tableId: "T11",
+    status: "in-progress",
+    orderedAt: makeTime(6),
     items: [
-      { id: "k8a", name: "Bibimbap", qty: 1, done: false },
-      { id: "k8b", name: "Kimchi", qty: 1, done: false },
-      { id: "k8c", name: "Green Tea", qty: 2, done: false },
+      { id: "k8a", itemKey: "bibimbap", qty: 1, done: false },
+      { id: "k8b", itemKey: "kimchi", qty: 1, done: false },
+      { id: "k8c", itemKey: "green-tea", qty: 2, done: false },
     ],
   },
   {
-    id: "k9", table: "Table 2", status: "in-progress", orderedAt: makeTime(3),
+    id: "k9",
+    tableId: "T2",
+    status: "in-progress",
+    orderedAt: makeTime(3),
     items: [
-      { id: "k9a", name: "Ramen", qty: 2, done: false, modifier: "Extra Spicy" },
-      { id: "k9b", name: "Gyoza", qty: 1, done: false },
+      { id: "k9a", itemKey: "ramen", qty: 2, done: false, modifierKey: "extra-spicy" },
+      { id: "k9b", itemKey: "gyoza", qty: 1, done: false },
     ],
   },
   {
-    id: "k10", table: "Table 8", status: "in-progress", orderedAt: makeTime(7),
+    id: "k10",
+    tableId: "T8",
+    status: "in-progress",
+    orderedAt: makeTime(7),
     items: [
-      { id: "k10a", name: "Pho", qty: 1, done: false },
-      { id: "k10b", name: "Bubble Tea", qty: 3, done: false },
+      { id: "k10a", itemKey: "pho", qty: 1, done: false },
+      { id: "k10b", itemKey: "bubble-tea", qty: 3, done: false },
     ],
   },
   {
-    id: "k14", table: "Table 15", status: "in-progress", orderedAt: makeTime(15),
+    id: "k14",
+    tableId: "T15",
+    status: "in-progress",
+    orderedAt: makeTime(15),
     items: [
-      { id: "k14a", name: "Teriyaki Salmon", qty: 1, done: true },
-      { id: "k14b", name: "Edamame", qty: 2, done: false },
+      { id: "k14a", itemKey: "teriyaki-salmon", qty: 1, done: true },
+      { id: "k14b", itemKey: "edamame", qty: 2, done: false },
     ],
   },
   {
-    id: "k15", table: "Table 6", status: "in-progress", orderedAt: makeTime(12),
+    id: "k15",
+    tableId: "T6",
+    status: "in-progress",
+    orderedAt: makeTime(12),
     items: [
-      { id: "k15a", name: "Dan Dan Noodles", qty: 1, done: false },
-      { id: "k15b", name: "Wonton Soup", qty: 2, done: true },
+      { id: "k15a", itemKey: "dan-dan-noodles", qty: 1, done: false },
+      { id: "k15b", itemKey: "wonton-soup", qty: 2, done: true },
     ],
   },
   {
-    id: "k16", table: "Table 14", status: "in-progress", orderedAt: makeTime(9),
+    id: "k16",
+    tableId: "T14",
+    status: "in-progress",
+    orderedAt: makeTime(9),
     items: [
-      { id: "k16a", name: "Takoyaki", qty: 3, done: false },
-      { id: "k16b", name: "Sake", qty: 2, done: false },
+      { id: "k16a", itemKey: "takoyaki", qty: 3, done: false },
+      { id: "k16b", itemKey: "sake-generic", qty: 2, done: false },
     ],
   },
   {
-    id: "k17", table: "Table 19", status: "in-progress", orderedAt: makeTime(5),
+    id: "k17",
+    tableId: "T19",
+    status: "in-progress",
+    orderedAt: makeTime(5),
     items: [
-      { id: "k17a", name: "Massaman Curry", qty: 1, done: false },
-      { id: "k17b", name: "Jasmine Rice", qty: 1, done: false },
+      { id: "k17a", itemKey: "massaman-curry", qty: 1, done: false },
+      { id: "k17b", itemKey: "jasmine-rice", qty: 1, done: false },
     ],
   },
   {
-    id: "k18", table: "Table 20", status: "in-progress", orderedAt: makeTime(4),
+    id: "k18",
+    tableId: "T20",
+    status: "in-progress",
+    orderedAt: makeTime(4),
     items: [
-      { id: "k18a", name: "Lo Mein", qty: 2, done: false },
-      { id: "k18b", name: "Spring Rolls", qty: 1, done: true },
+      { id: "k18a", itemKey: "lo-mein", qty: 2, done: false },
+      { id: "k18b", itemKey: "spring-rolls-generic", qty: 1, done: true },
     ],
   },
   {
-    id: "k19", table: "Bar 1", status: "in-progress", orderedAt: makeTime(8),
+    id: "k19",
+    tableId: "BAR1",
+    status: "in-progress",
+    orderedAt: makeTime(8),
     items: [
-      { id: "k19a", name: "Lychee Martini", qty: 2, done: true },
-      { id: "k19b", name: "Mai Tai", qty: 1, done: false },
+      { id: "k19a", itemKey: "lychee-martini", qty: 2, done: true },
+      { id: "k19b", itemKey: "mai-tai", qty: 1, done: false },
     ],
   },
   {
-    id: "k20", table: "Table 16", status: "in-progress", orderedAt: makeTime(11),
+    id: "k20",
+    tableId: "T16",
+    status: "in-progress",
+    orderedAt: makeTime(11),
     items: [
-      { id: "k20a", name: "Cashew Chicken", qty: 1, done: false },
-      { id: "k20b", name: "Fried Rice", qty: 1, done: true },
-      { id: "k20c", name: "Thai Tea", qty: 2, done: false },
-    ],
-  },
-  // ── Received ──
-  {
-    id: "k21", table: "Table 4", status: "received", orderedAt: makeTime(1),
-    items: [
-      { id: "k21a", name: "Bulgogi", qty: 2, done: false },
-      { id: "k21b", name: "Steamed Rice", qty: 2, done: false },
+      { id: "k20a", itemKey: "cashew-chicken", qty: 1, done: false },
+      { id: "k20b", itemKey: "fried-rice", qty: 1, done: true },
+      { id: "k20c", itemKey: "thai-tea", qty: 2, done: false },
     ],
   },
   {
-    id: "k22", table: "Table 10", status: "received", orderedAt: makeTime(0.5),
+    id: "k21",
+    tableId: "T4",
+    status: "received",
+    orderedAt: makeTime(1),
     items: [
-      { id: "k22a", name: "Udon Noodles", qty: 1, done: false },
-      { id: "k22b", name: "Tempura", qty: 1, done: false },
+      { id: "k21a", itemKey: "bulgogi", qty: 2, done: false },
+      { id: "k21b", itemKey: "steamed-rice", qty: 2, done: false },
     ],
   },
   {
-    id: "k23", table: "Table 12", status: "received", orderedAt: makeTime(2),
+    id: "k22",
+    tableId: "T10",
+    status: "received",
+    orderedAt: makeTime(0.5),
     items: [
-      { id: "k23a", name: "Chow Mein", qty: 1, done: false },
-      { id: "k23b", name: "Hot & Sour Soup", qty: 2, done: false },
-      { id: "k23c", name: "Coca-Cola", qty: 3, done: false },
+      { id: "k22a", itemKey: "udon", qty: 1, done: false },
+      { id: "k22b", itemKey: "tempura", qty: 1, done: false },
     ],
   },
   {
-    id: "k24", table: "Bar 2", status: "received", orderedAt: makeTime(0.3),
+    id: "k23",
+    tableId: "T12",
+    status: "received",
+    orderedAt: makeTime(2),
     items: [
-      { id: "k24a", name: "Sake Bomb", qty: 2, done: false },
-      { id: "k24b", name: "Soju", qty: 1, done: false },
-    ],
-  },
-  // ── Completed (lots) ──
-  {
-    id: "k11", table: "Table 6", status: "completed", orderedAt: makeTime(55), completedAt: makeTime(35),
-    items: [
-      { id: "k11a", name: "Teriyaki Chicken", qty: 1, done: false },
-      { id: "k11b", name: "Udon Noodles", qty: 1, done: false },
+      { id: "k23a", itemKey: "chow-mein", qty: 1, done: false },
+      { id: "k23b", itemKey: "hot-sour-soup", qty: 2, done: false },
+      { id: "k23c", itemKey: "coke", qty: 3, done: false },
     ],
   },
   {
-    id: "k12", table: "Table 4", status: "completed", orderedAt: makeTime(70), completedAt: makeTime(48),
+    id: "k24",
+    tableId: "BAR2",
+    status: "received",
+    orderedAt: makeTime(0.3),
     items: [
-      { id: "k12a", name: "Lobster Tail", qty: 1, done: false },
-      { id: "k12b", name: "Truffle Fries", qty: 1, done: false },
-      { id: "k12c", name: "Red Wine", qty: 2, done: false },
+      { id: "k24a", itemKey: "sake-bomb", qty: 2, done: false },
+      { id: "k24b", itemKey: "soju", qty: 1, done: false },
     ],
   },
   {
-    id: "k13", table: "Table 10", status: "completed", orderedAt: makeTime(90), completedAt: makeTime(65),
+    id: "k11",
+    tableId: "T6",
+    status: "completed",
+    orderedAt: makeTime(55),
+    completedAt: makeTime(35),
     items: [
-      { id: "k13a", name: "Bulgogi", qty: 2, done: false },
-      { id: "k13b", name: "Steamed Rice", qty: 2, done: false },
+      { id: "k11a", itemKey: "teriyaki-chicken", qty: 1, done: false },
+      { id: "k11b", itemKey: "udon", qty: 1, done: false },
+    ],
+  },
+  {
+    id: "k12",
+    tableId: "T4",
+    status: "completed",
+    orderedAt: makeTime(70),
+    completedAt: makeTime(48),
+    items: [
+      { id: "k12a", itemKey: "lobster-tail", qty: 1, done: false },
+      { id: "k12b", itemKey: "truffle-fries", qty: 1, done: false },
+      { id: "k12c", itemKey: "red-wine", qty: 2, done: false },
+    ],
+  },
+  {
+    id: "k13",
+    tableId: "T10",
+    status: "completed",
+    orderedAt: makeTime(90),
+    completedAt: makeTime(65),
+    items: [
+      { id: "k13a", itemKey: "bulgogi", qty: 2, done: false },
+      { id: "k13b", itemKey: "steamed-rice", qty: 2, done: false },
     ],
   },
 ];
@@ -197,9 +269,14 @@ export function getElapsedMinutes(ts: number) {
   return Math.floor((Date.now() - ts) / 60000);
 }
 
-export function getUrgencyLabel(mins: number): { label: string; isUrgent: boolean; isWarning: boolean } {
-  if (mins >= 20) return { label: `${mins}m elapsed`, isUrgent: true, isWarning: false };
-  if (mins >= 10) return { label: `${mins}m elapsed`, isUrgent: false, isWarning: true };
-  if (mins <= 1) return { label: "Just now", isUrgent: false, isWarning: false };
-  return { label: `${mins}m`, isUrgent: false, isWarning: false };
+export function getUrgencyParts(mins: number): {
+  key: string;
+  params?: { mins: number };
+  isUrgent: boolean;
+  isWarning: boolean;
+} {
+  if (mins >= 20) return { key: "kitchen.urgencyMinsElapsed", params: { mins }, isUrgent: true, isWarning: false };
+  if (mins >= 10) return { key: "kitchen.urgencyMinsElapsed", params: { mins }, isUrgent: false, isWarning: true };
+  if (mins <= 1) return { key: "kitchen.urgencyJustNow", isUrgent: false, isWarning: false };
+  return { key: "kitchen.urgencyMins", params: { mins }, isUrgent: false, isWarning: false };
 }

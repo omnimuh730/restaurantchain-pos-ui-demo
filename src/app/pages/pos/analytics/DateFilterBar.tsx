@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { CalendarRange } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 import { CustomRangePicker, type DateRange } from "./CustomRangePicker";
 
@@ -24,6 +25,7 @@ function fmtDate(d: Date) {
 }
 
 export function DateFilterBar({ period, setPeriod, title, onRangeChange }: DateFilterBarProps) {
+  const { t } = useTranslation();
   const tc = useThemeClasses();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [range, setRange] = useState<DateRange | null>(null);
@@ -45,7 +47,7 @@ export function DateFilterBar({ period, setPeriod, title, onRangeChange }: DateF
     return arr;
   }, [today]);
 
-  const weekdayFmt = new Intl.DateTimeFormat("en-US", { weekday: "short" });
+  const weekdayFmt = new Intl.DateTimeFormat("ko-KR", { weekday: "short" });
 
   const selectDay = (d: Date) => {
     setSelectedDate(d);
@@ -61,11 +63,12 @@ export function DateFilterBar({ period, setPeriod, title, onRangeChange }: DateF
 
   const customActive = period === "custom" && range && !(isSameDay(range.start, range.end) && days.some((d) => isSameDay(d, range.start)));
 
-  const dateDisplay = customActive && range
-    ? `${fmtDate(range.start)} - ${fmtDate(range.end)}`
-    : isSameDay(selectedDate, today)
-      ? `Today`
-      : fmtDate(selectedDate);
+  const dateDisplay =
+    customActive && range
+      ? `${fmtDate(range.start)} - ${fmtDate(range.end)}`
+      : isSameDay(selectedDate, today)
+        ? t("analytics.dateFilter.today")
+        : fmtDate(selectedDate);
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">

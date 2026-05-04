@@ -1,6 +1,8 @@
 import { Check, Minus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 import type { KitchenOrderItem } from "./types";
+import { menuItemName, modifierLabel } from "../../../../i18n/utils";
 
 interface ConfirmActionModalProps {
   action: "complete" | "recall" | "accept";
@@ -9,31 +11,22 @@ interface ConfirmActionModalProps {
   onCancel: () => void;
 }
 
-const ACTION_COPY = {
-  complete: { title: "Complete Items?", desc: "The following items will be marked as completed:", btn: "Complete" },
-  recall: { title: "Recall Items?", desc: "The following items will be sent back to kitchen:", btn: "Recall" },
-  accept: { title: "Accept Order?", desc: "The following items will be moved to In Progress:", btn: "Accept" },
-} as const;
-
 export function ConfirmActionModal({ action, items, onConfirm, onCancel }: ConfirmActionModalProps) {
+  const { t } = useTranslation();
   const tc = useThemeClasses();
+  const copy = t(`kitchen.confirm.${action}`, { returnObjects: true }) as { title: string; desc: string; btn: string };
 
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={onCancel}
     >
-      <div
-        className={`${tc.card} rounded-xl shadow-xl w-[90%] max-w-sm`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
+      <div className={`${tc.card} rounded-xl shadow-xl w-[90%] max-w-sm`} onClick={(e) => e.stopPropagation()}>
         <div className={`p-5 border-b ${tc.border}`}>
-          <h3 className={`text-[1rem] ${tc.heading}`}>{ACTION_COPY[action].title}</h3>
-          <p className={`text-[0.75rem] ${tc.subtext} mt-1`}>{ACTION_COPY[action].desc}</p>
+          <h3 className={`text-[1rem] ${tc.heading}`}>{copy.title}</h3>
+          <p className={`text-[0.75rem] ${tc.subtext} mt-1`}>{copy.desc}</p>
         </div>
 
-        {/* Items list */}
         <div className="p-5 max-h-[40vh] overflow-y-auto space-y-1.5">
           {items.map((item) => (
             <div
@@ -53,23 +46,18 @@ export function ConfirmActionModal({ action, items, onConfirm, onCancel }: Confi
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className={`text-[0.8125rem] ${tc.text2}`}>
-                  {item.name}
-                </p>
-                {item.modifier && (
-                  <p className={`text-[0.625rem] ${tc.muted} mt-0.5`}>∟ {item.modifier}</p>
+                <p className={`text-[0.8125rem] ${tc.text2}`}>{menuItemName(t, item.itemKey)}</p>
+                {item.modifierKey && (
+                  <p className={`text-[0.625rem] ${tc.muted} mt-0.5`}>∟ {modifierLabel(t, item.modifierKey)}</p>
                 )}
               </div>
               <span className={`text-[0.875rem] shrink-0 ${tc.text2}`}>
-                {item.selectedQty !== undefined && item.selectedQty < item.qty
-                  ? item.selectedQty
-                  : item.qty}
+                {item.selectedQty !== undefined && item.selectedQty < item.qty ? item.selectedQty : item.qty}
               </span>
             </div>
           ))}
         </div>
 
-        {/* Footer actions */}
         <div className={`p-5 border-t ${tc.border} flex gap-2`}>
           <button
             onClick={onCancel}
@@ -79,13 +67,13 @@ export function ConfirmActionModal({ action, items, onConfirm, onCancel }: Confi
                 : "border-slate-300 text-slate-500 hover:bg-slate-50"
             }`}
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             onClick={onConfirm}
             className="flex-1 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[0.8125rem] cursor-pointer transition-colors"
           >
-            {ACTION_COPY[action].btn}
+            {copy.btn}
           </button>
         </div>
       </div>

@@ -1,27 +1,25 @@
 import { ChevronDown, ChevronRight, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 import { useState } from "react";
+import { floorLabel, tableLabel } from "../../../../i18n/utils";
 
-// Kitchen tables mapped to floors
 export const KITCHEN_FLOORS = [
   {
     id: "1F",
-    label: "1st Floor",
-    tables: ["Table 1", "Table 2", "Table 3", "Table 4", "Table 5"],
+    tables: ["T1", "T2", "T3", "T4", "T5"],
   },
   {
     id: "2F",
-    label: "2nd Floor",
     tables: [
-      "Table 6", "Table 7", "Table 8", "Table 9", "Table 10",
-      "Table 11", "Table 12", "Table 13", "Table 14", "Table 15",
-      "Table 16", "Table 17", "Table 18", "Table 19", "Table 20",
+      "T6", "T7", "T8", "T9", "T10",
+      "T11", "T12", "T13", "T14", "T15",
+      "T16", "T17", "T18", "T19", "T20",
     ],
   },
   {
     id: "bar",
-    label: "Bar",
-    tables: ["Bar 1", "Bar 2", "Bar 3"],
+    tables: ["BAR1", "BAR2", "BAR3"],
   },
 ];
 
@@ -35,12 +33,13 @@ interface TableFilterSidebarProps {
 }
 
 function FilterContent({ selectedTables, setSelectedTables }: Pick<TableFilterSidebarProps, "selectedTables" | "setSelectedTables">) {
+  const { t } = useTranslation();
   const tc = useThemeClasses();
   const [expandedFloors, setExpandedFloors] = useState<Set<string>>(
-    new Set(KITCHEN_FLOORS.map((f) => f.id))
+    new Set(KITCHEN_FLOORS.map((f) => f.id)),
   );
 
-  const allSelected = ALL_TABLES.every((t) => selectedTables.has(t));
+  const allSelected = ALL_TABLES.every((tb) => selectedTables.has(tb));
 
   const toggleAll = () => {
     setSelectedTables(allSelected ? new Set() : new Set(ALL_TABLES));
@@ -48,143 +47,100 @@ function FilterContent({ selectedTables, setSelectedTables }: Pick<TableFilterSi
 
   const toggleFloor = (floorId: string) => {
     const floor = KITCHEN_FLOORS.find((f) => f.id === floorId)!;
-    const allFloorSelected = floor.tables.every((t) => selectedTables.has(t));
+    const allFloorSelected = floor.tables.every((tb) => selectedTables.has(tb));
     const next = new Set(selectedTables);
     if (allFloorSelected) {
-      floor.tables.forEach((t) => next.delete(t));
+      floor.tables.forEach((tb) => next.delete(tb));
     } else {
-      floor.tables.forEach((t) => next.add(t));
+      floor.tables.forEach((tb) => next.add(tb));
     }
     setSelectedTables(next);
   };
 
-  const toggleTable = (table: string) => {
+  const toggleTable = (tableId: string) => {
     const next = new Set(selectedTables);
-    if (next.has(table)) next.delete(table);
-    else next.add(table);
+    if (next.has(tableId)) next.delete(tableId);
+    else next.add(tableId);
     setSelectedTables(next);
-  };
-
-  const toggleExpand = (floorId: string) => {
-    const next = new Set(expandedFloors);
-    if (next.has(floorId)) next.delete(floorId);
-    else next.add(floorId);
-    setExpandedFloors(next);
   };
 
   const floorState = (floorId: string) => {
     const floor = KITCHEN_FLOORS.find((f) => f.id === floorId)!;
-    const count = floor.tables.filter((t) => selectedTables.has(t)).length;
+    const count = floor.tables.filter((tb) => selectedTables.has(tb)).length;
     if (count === 0) return "none";
     if (count === floor.tables.length) return "all";
     return "partial";
   };
 
-  const selectedCount = selectedTables.size;
-
   return (
-    <>
-      {/* All Floors toggle */}
-      <button
-        onClick={toggleAll}
-        className={`w-full text-left px-4 py-3 text-[0.8125rem] cursor-pointer transition-colors border-b ${tc.border} flex items-center justify-between ${
-          allSelected
-            ? "bg-blue-600 text-white"
-            : `${tc.text1} ${tc.hover}`
-        }`}
-      >
-        <span>All Floors</span>
-        <span className={`text-[0.6875rem] ${allSelected ? "text-blue-100" : tc.muted}`}>
-          {selectedCount}/{ALL_TABLES.length}
-        </span>
-      </button>
-
-      {/* Floor groups */}
-      <div className="flex-1 overflow-y-auto">
+    <div className="flex flex-col h-full">
+      <div className={`p-4 border-b ${tc.border}`}>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className={`text-[1rem] ${tc.heading}`}>{t("kitchen.filterTitle")}</h3>
+          <button
+            onClick={toggleAll}
+            className={`text-[0.75rem] px-2 py-1 rounded cursor-pointer ${tc.isDark ? "bg-slate-700 hover:bg-slate-600" : "bg-slate-100 hover:bg-slate-200"}`}
+          >
+            {allSelected ? t("kitchen.deselectAll") : t("kitchen.selectAll")}
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-2">
         {KITCHEN_FLOORS.map((floor) => {
-          const state = floorState(floor.id);
           const expanded = expandedFloors.has(floor.id);
-          const floorSelectedCount = floor.tables.filter((t) => selectedTables.has(t)).length;
+          const state = floorState(floor.id);
+          const floorSelectedCount = floor.tables.filter((tb) => selectedTables.has(tb)).length;
           return (
-            <div key={floor.id} className={`border-b ${tc.borderHalf}`}>
-              {/* Floor header */}
-              <div className="flex items-center">
+            <div key={floor.id} className="mb-1">
+              <button
+                onClick={() => {
+                  const next = new Set(expandedFloors);
+                  if (expanded) next.delete(floor.id);
+                  else next.add(floor.id);
+                  setExpandedFloors(next);
+                }}
+                className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer ${tc.isDark ? "hover:bg-slate-800" : "hover:bg-slate-100"}`}
+              >
+                {expanded ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
+                <span className={`flex-1 text-left text-[0.875rem] ${tc.heading}`}>{floorLabel(t, floor.id)}</span>
+                <span className={`text-[0.6875rem] ${tc.subtext}`}>
+                  {floorSelectedCount}/{floor.tables.length}
+                </span>
                 <button
-                  onClick={() => toggleExpand(floor.id)}
-                  className={`px-2 py-2.5 ${tc.subtext} cursor-pointer`}
-                >
-                  {expanded ? (
-                    <ChevronDown className="w-4 h-4" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4" />
-                  )}
-                </button>
-                <button
-                  onClick={() => toggleFloor(floor.id)}
-                  className={`flex-1 text-left py-2.5 pr-4 text-[0.8125rem] cursor-pointer transition-colors ${
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFloor(floor.id);
+                  }}
+                  className={`text-[0.625rem] px-1.5 py-0.5 rounded ${
                     state === "all"
-                      ? tc.isDark ? "text-blue-400" : "text-blue-600"
+                      ? "bg-blue-600 text-white"
                       : state === "partial"
-                      ? tc.isDark ? "text-blue-400/70" : "text-blue-500/70"
-                      : tc.text1
+                        ? "bg-blue-600/50 text-white"
+                        : tc.isDark
+                          ? "bg-slate-700"
+                          : "bg-slate-200"
                   }`}
                 >
-                  <span className="flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <span
-                        className={`w-3 h-3 rounded flex items-center justify-center border ${
-                          state === "all"
-                            ? "bg-blue-500 border-blue-500"
-                            : state === "partial"
-                            ? "bg-blue-500/30 border-blue-500"
-                            : tc.isDark ? "border-slate-500" : "border-slate-400"
-                        }`}
-                      >
-                        {state === "all" && (
-                          <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                        {state === "partial" && (
-                          <span className="w-1.5 h-0.5 bg-blue-500 rounded" />
-                        )}
-                      </span>
-                      {floor.label}
-                    </span>
-                    <span className={`text-[0.6875rem] ${tc.muted}`}>
-                      {floorSelectedCount}/{floor.tables.length}
-                    </span>
-                  </span>
+                  {state === "all" ? "✓" : state === "partial" ? "−" : ""}
                 </button>
-              </div>
-
-              {/* Tables */}
+              </button>
               {expanded && (
-                <div className="flex flex-col pb-1">
-                  {floor.tables.map((table) => {
-                    const active = selectedTables.has(table);
+                <div className="ml-6 mt-1 space-y-0.5">
+                  {floor.tables.map((tableId) => {
+                    const sel = selectedTables.has(tableId);
                     return (
                       <button
-                        key={table}
-                        onClick={() => toggleTable(table)}
-                        className={`w-full text-left pl-10 pr-4 py-2 text-[0.8125rem] cursor-pointer transition-colors ${
-                          active
-                            ? tc.isDark
-                              ? "text-blue-300 bg-blue-600/15"
-                              : "text-blue-700 bg-blue-50"
-                            : `${tc.muted} ${tc.hover}`
+                        key={tableId}
+                        onClick={() => toggleTable(tableId)}
+                        className={`w-full text-left px-2 py-1.5 rounded text-[0.8125rem] cursor-pointer ${
+                          sel
+                            ? "bg-blue-600 text-white"
+                            : tc.isDark
+                              ? "hover:bg-slate-800 text-slate-300"
+                              : "hover:bg-slate-100 text-slate-700"
                         }`}
                       >
-                        <span className="flex items-center gap-2.5">
-                          <span
-                            className={`w-2.5 h-2.5 rounded-full border-2 ${
-                              active
-                                ? "bg-blue-500 border-blue-500"
-                                : tc.isDark ? "border-slate-500" : "border-slate-400"
-                            }`}
-                          />
-                          {table}
-                        </span>
+                        {tableLabel(t, tableId)}
                       </button>
                     );
                   })}
@@ -194,47 +150,35 @@ function FilterContent({ selectedTables, setSelectedTables }: Pick<TableFilterSi
           );
         })}
       </div>
-    </>
+    </div>
   );
 }
 
 export function TableFilterSidebar({ selectedTables, setSelectedTables, open, onClose }: TableFilterSidebarProps) {
+  const { t } = useTranslation();
   const tc = useThemeClasses();
+  const selectedCount = selectedTables.size;
+
+  if (!open) return null;
 
   return (
     <>
-      {/* Desktop: static sidebar */}
+      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
       <div
-        className={`hidden md:flex w-52 shrink-0 border-r ${tc.border} ${tc.raised} flex-col overflow-hidden`}
+        className={`fixed top-0 right-0 bottom-0 z-50 w-72 max-w-[85vw] shadow-xl flex flex-col ${tc.isDark ? "bg-[#1e2330]" : "bg-white"}`}
       >
-        <div className={`px-4 py-3 border-b ${tc.border}`}>
-          <span className={`text-[0.8125rem] ${tc.heading}`}>My Tables</span>
+        <div className={`flex items-center justify-between p-3 border-b ${tc.border}`}>
+          <span className={`text-[0.875rem] ${tc.heading}`}>
+            {t("kitchen.tablesSelected", { count: selectedCount })}
+          </span>
+          <button onClick={onClose} className="p-1 rounded cursor-pointer hover:bg-slate-700/20">
+            <X className="w-5 h-5" />
+          </button>
         </div>
         <FilterContent selectedTables={selectedTables} setSelectedTables={setSelectedTables} />
       </div>
-
-      {/* Mobile: drawer overlay */}
-      {open && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-          {/* Drawer */}
-          <div
-            className={`relative w-72 max-w-[80vw] ${tc.raised} flex flex-col h-full shadow-xl animate-slide-in-left`}
-          >
-            <div className={`px-4 py-3 border-b ${tc.border} flex items-center justify-between`}>
-              <span className={`text-[0.8125rem] ${tc.heading}`}>My Tables</span>
-              <button
-                onClick={onClose}
-                className={`p-1.5 rounded-lg cursor-pointer ${tc.hover} ${tc.subtext}`}
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <FilterContent selectedTables={selectedTables} setSelectedTables={setSelectedTables} />
-          </div>
-        </div>
-      )}
     </>
   );
 }
+
+export { ALL_TABLES };

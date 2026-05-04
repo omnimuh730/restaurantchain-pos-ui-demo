@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 
 export type DateRange = { start: Date; end: Date };
@@ -11,8 +12,6 @@ interface CustomRangePickerProps {
   onApply: (range: DateRange) => void;
   initial?: DateRange | null;
 }
-
-const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -25,6 +24,7 @@ function inRange(d: Date, start: Date | null, end: Date | null) {
 }
 
 export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRangePickerProps) {
+  const { t } = useTranslation();
   const tc = useThemeClasses();
   const [viewYear, setViewYear] = useState(() => (initial?.start ?? new Date(2026, 3, 1)).getFullYear());
   const [viewMonth, setViewMonth] = useState(() => (initial?.start ?? new Date(2026, 3, 1)).getMonth());
@@ -47,6 +47,11 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
     return result;
   }, [viewYear, viewMonth]);
 
+  const weekdayLabels = useMemo(() => {
+    const wdf = new Intl.DateTimeFormat("ko-KR", { weekday: "short" });
+    return Array.from({ length: 7 }, (_, i) => wdf.format(new Date(2026, 0, 4 + i)));
+  }, []);
+
   const handleClick = (d: Date) => {
     if (!start || (start && end)) {
       setStart(d);
@@ -59,60 +64,73 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
   };
 
   const navigate = (dir: -1 | 1) => {
-    let m = viewMonth + dir, y = viewYear;
-    if (m < 0) { m = 11; y--; }
-    if (m > 11) { m = 0; y++; }
-    setViewMonth(m); setViewYear(y);
+    let m = viewMonth + dir,
+      y = viewYear;
+    if (m < 0) {
+      m = 11;
+      y--;
+    }
+    if (m > 11) {
+      m = 0;
+      y++;
+    }
+    setViewMonth(m);
+    setViewYear(y);
   };
 
-  const presets: { label: string; getRange: () => DateRange }[] = [
-    {
-      label: "Last 1 Week",
-      getRange: () => {
-        const today = new Date();
-        const lastSat = new Date(today);
-        lastSat.setHours(0, 0, 0, 0);
-        lastSat.setDate(today.getDate() - today.getDay() - 1);
-        const lastSun = new Date(lastSat);
-        lastSun.setDate(lastSat.getDate() - 6);
-        return { start: lastSun, end: lastSat };
-      },
-    },
-    {
-      label: "Last 2 weeks",
-      getRange: () => {
-        const today = new Date();
-        const lastSat = new Date(today);
-        lastSat.setHours(0, 0, 0, 0);
-        lastSat.setDate(today.getDate() - today.getDay() - 1);
-        const start = new Date(lastSat);
-        start.setDate(lastSat.getDate() - 13);
-        return { start, end: lastSat };
-      },
-    },
-    {
-      label: "This Month",
-      getRange: () => {
-        const today = new Date();
-        const start = new Date(today.getFullYear(), today.getMonth(), 1);
-        const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        return { start, end };
-      },
-    },
-    {
-      label: "Last Month",
-      getRange: () => {
-        const today = new Date();
-        const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        const end = new Date(today.getFullYear(), today.getMonth(), 0);
-        return { start, end };
-      },
-    },
-  ];
+  const presets = useMemo(
+    () =>
+      [
+        {
+          labelKey: "analytics.customRange.last1Week",
+          getRange: () => {
+            const today = new Date();
+            const lastSat = new Date(today);
+            lastSat.setHours(0, 0, 0, 0);
+            lastSat.setDate(today.getDate() - today.getDay() - 1);
+            const lastSun = new Date(lastSat);
+            lastSun.setDate(lastSat.getDate() - 6);
+            return { start: lastSun, end: lastSat };
+          },
+        },
+        {
+          labelKey: "analytics.customRange.last2Weeks",
+          getRange: () => {
+            const today = new Date();
+            const lastSat = new Date(today);
+            lastSat.setHours(0, 0, 0, 0);
+            lastSat.setDate(today.getDate() - today.getDay() - 1);
+            const rangeStart = new Date(lastSat);
+            rangeStart.setDate(lastSat.getDate() - 13);
+            return { start: rangeStart, end: lastSat };
+          },
+        },
+        {
+          labelKey: "analytics.customRange.thisMonth",
+          getRange: () => {
+            const today = new Date();
+            const rangeStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            const rangeEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            return { start: rangeStart, end: rangeEnd };
+          },
+        },
+        {
+          labelKey: "analytics.customRange.lastMonth",
+          getRange: () => {
+            const today = new Date();
+            const rangeStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            const rangeEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+            return { start: rangeStart, end: rangeEnd };
+          },
+        },
+      ] as const,
+    []
+  );
 
-  const fmt = (d: Date | null) => d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
+  const fmt = (d: Date | null) =>
+    d ? d.toLocaleDateString("ko-KR", { month: "short", day: "numeric", year: "numeric" }) : "—";
   const canApply = start && end;
-  const monthLabel = new Date(viewYear, viewMonth).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const monthLabel = new Date(viewYear, viewMonth).toLocaleDateString("ko-KR", { month: "long", year: "numeric" });
 
   return (
     <AnimatePresence>
@@ -134,8 +152,10 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
           >
             <div className={`flex items-center justify-between px-5 py-4 border-b ${tc.border}`}>
               <div>
-                <h3 className={`text-[1rem] ${tc.heading}`}>Select date range</h3>
-                <p className={`text-[0.875rem] ${tc.subtext} mt-0.5`}>{fmt(start)} — {fmt(end)}</p>
+                <h3 className={`text-[1rem] ${tc.heading}`}>{t("analytics.customRange.title")}</h3>
+                <p className={`text-[0.875rem] ${tc.subtext} mt-0.5`}>
+                  {fmt(start)} — {fmt(end)}
+                </p>
               </div>
               <button onClick={onClose} className={`p-1.5 rounded-full cursor-pointer transition-colors ${tc.hover}`}>
                 <X className={`w-4 h-4 ${tc.subtext}`} />
@@ -145,11 +165,17 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
             <div className="flex flex-wrap gap-1.5 px-5 pt-4">
               {presets.map((p) => (
                 <button
-                  key={p.label}
-                  onClick={() => { const r = p.getRange(); setStart(r.start); setEnd(r.end); setViewMonth(r.end.getMonth()); setViewYear(r.end.getFullYear()); }}
+                  key={p.labelKey}
+                  onClick={() => {
+                    const r = p.getRange();
+                    setStart(r.start);
+                    setEnd(r.end);
+                    setViewMonth(r.end.getMonth());
+                    setViewYear(r.end.getFullYear());
+                  }}
                   className={`px-2.5 py-1 rounded-full text-[0.8125rem] cursor-pointer transition-colors ${tc.hover} ${tc.subtext} border ${tc.border}`}
                 >
-                  {p.label}
+                  {t(p.labelKey)}
                 </button>
               ))}
             </div>
@@ -166,8 +192,10 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
               </div>
 
               <div className="grid grid-cols-7 gap-1 mb-1">
-                {WEEKDAYS.map((w, i) => (
-                  <div key={`wh-${i}`} className={`text-center text-[0.75rem] ${tc.subtext} py-1`}>{w}</div>
+                {weekdayLabels.map((w, i) => (
+                  <div key={`wh-${i}`} className={`text-center text-[0.75rem] ${tc.subtext} py-1`}>
+                    {w}
+                  </div>
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-1">
@@ -188,7 +216,9 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
                         isEndpoint
                           ? "bg-blue-600 text-white"
                           : isIn
-                            ? tc.isDark ? "bg-blue-800/40 text-blue-100" : "bg-blue-100 text-blue-800"
+                            ? tc.isDark
+                              ? "bg-blue-800/40 text-blue-100"
+                              : "bg-blue-100 text-blue-800"
                             : `${tc.subtext} ${tc.hover}`
                       }`}
                     >
@@ -200,17 +230,25 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
             </div>
 
             <div className={`flex items-center justify-end gap-2 px-5 py-3 border-t ${tc.border}`}>
-              <button onClick={onClose} className={`px-3 py-1.5 rounded-full text-[0.875rem] cursor-pointer transition-colors ${tc.subtext} ${tc.hover}`}>
-                Cancel
+              <button
+                onClick={onClose}
+                className={`px-3 py-1.5 rounded-full text-[0.875rem] cursor-pointer transition-colors ${tc.subtext} ${tc.hover}`}
+              >
+                {t("analytics.customRange.cancel")}
               </button>
               <button
-                onClick={() => { if (canApply) { onApply({ start: start!, end: end! }); onClose(); } }}
+                onClick={() => {
+                  if (canApply) {
+                    onApply({ start: start!, end: end! });
+                    onClose();
+                  }
+                }}
                 disabled={!canApply}
                 className={`px-4 py-1.5 rounded-full text-[0.875rem] cursor-pointer transition-colors ${
                   canApply ? "bg-blue-600 text-white hover:bg-blue-700" : `${tc.isDark ? "bg-slate-700" : "bg-slate-200"} ${tc.subtext} cursor-not-allowed`
                 }`}
               >
-                Apply
+                {t("analytics.customRange.apply")}
               </button>
             </div>
           </motion.div>

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 export type MoneyCurrency = "foreign" | "domestic";
 
@@ -57,12 +58,13 @@ export function useAnalyticsCurrency(): CurrencyCtx {
 }
 
 export function CurrencyToggle({ className = "" }: { className?: string }) {
+  const { t } = useTranslation();
   const { currency, setCurrency } = useAnalyticsCurrency();
   return (
     <div className={`inline-flex items-center rounded-md p-0.5 bg-slate-200 dark:bg-slate-800 ${className}`}>
       {([
-        { id: "foreign" as MoneyCurrency, label: "$ Foreign" },
-        { id: "domestic" as MoneyCurrency, label: "₩ Domestic" },
+        { id: "foreign" as MoneyCurrency, label: t("analytics.currencyToggle.foreign") },
+        { id: "domestic" as MoneyCurrency, label: t("analytics.currencyToggle.domestic") },
       ]).map((o) => {
         const active = currency === o.id;
         return (

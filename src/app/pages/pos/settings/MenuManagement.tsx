@@ -1,11 +1,17 @@
 import { useState, useMemo } from "react";
-import { UtensilsCrossed, Plus, X, Edit3, Search, AlertTriangle, Check, Eye, EyeOff, Receipt, Tag } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
+import { UtensilsCrossed, Plus, X, Edit3, Search, AlertTriangle, Check, Eye, EyeOff } from "lucide-react";
 import { useThemeClasses } from "../theme-context";
 import { InlineModal } from "./ui-helpers";
 import { INITIAL_MENU_CATEGORIES } from "./data";
 import type { MenuCategory, MenuItem } from "./types";
 
 type CatalogItem = { id: string; name: string; price: number };
+
+function menuItemDisplayName(t: TFunction, item: MenuItem): string {
+  return t(`menuItems.${item.id}`, { defaultValue: item.name });
+}
 
 const FOOD_CATALOG: CatalogItem[] = [
  { id: "wagyu-burger", name: "Wagyu Burger", price: 32 },
@@ -37,6 +43,7 @@ const FOOD_CATALOG: CatalogItem[] = [
 ];
 
 export function MenuManagement() {
+ const { t } = useTranslation();
  const tc = useThemeClasses();
  const [categories, setCategories] = useState<MenuCategory[]>(INITIAL_MENU_CATEGORIES);
  const [selectedCat, setSelectedCat] = useState<string>(categories[0]?.id || "");
@@ -48,7 +55,6 @@ export function MenuManagement() {
  const [addItemSelection, setAddItemSelection] = useState<Set<string>>(new Set());
 
  const [editItem, setEditItem] = useState<MenuItem | null>(null);
- const [formName, setFormName] = useState("");
  const [formPrice, setFormPrice] = useState("");
 
  type Currency = "foreign" | "domestic";
@@ -59,12 +65,18 @@ export function MenuManagement() {
 
  const currentCat = categories.find((c) => c.id === selectedCat);
  const currentSub = selectedSub ? currentCat?.subCategories.find((s) => s.id === selectedSub) : null;
- const displayItems = currentSub
- ? currentSub.items
- : currentCat?.subCategories.flatMap((s) => s.items) || [];
- const filteredItems = displayItems.filter((item) =>
- item.name.toLowerCase().includes(search.toLowerCase())
+ const displayItems = useMemo(
+ () => (currentSub ? currentSub.items : currentCat?.subCategories.flatMap((s) => s.items) ?? []),
+ [currentSub, currentCat],
  );
+ const filteredItems = useMemo(() => {
+ const q = search.trim().toLowerCase();
+ if (!q) return displayItems;
+ return displayItems.filter((item) => {
+ const label = menuItemDisplayName(t, item);
+ return label.toLowerCase().includes(q) || item.id.toLowerCase().includes(q);
+ });
+ }, [displayItems, search, t]);
  const totalItems = categories.reduce((sum, c) => sum + c.subCategories.reduce((s2, sc) => s2 + sc.items.length, 0), 0);
 
  const existingSubIds = useMemo(
@@ -72,12 +84,15 @@ export function MenuManagement() {
  [currentSub],
  );
 
- const filteredCatalog = useMemo(
- () => FOOD_CATALOG.filter((f) => f.name.toLowerCase().includes(addItemSearch.toLowerCase())),
- [addItemSearch],
- );
+ const filteredCatalog = useMemo(() => {
+ const q = addItemSearch.trim().toLowerCase();
+ return FOOD_CATALOG.filter((f) => {
+ const label = t(`menuItems.${f.id}`, { defaultValue: f.name });
+ return label.toLowerCase().includes(q) || f.id.toLowerCase().includes(q);
+ });
+ }, [addItemSearch, t]);
 
- const resetForm = () => { setFormName(""); setFormPrice(""); };
+ const resetForm = () => { setFormPrice(""); };
 
  const openAddItem = () => {
  setAddItemSearch("");
@@ -109,11 +124,11 @@ export function MenuManagement() {
  };
 
  const updateItem = () => {
- if (!editItem || !formName.trim()) return;
+ if (!editItem) return;
  const price = parseFloat(formPrice) || 0;
  setCategories((prev) => prev.map((c) => ({
  ...c, subCategories: c.subCategories.map((s) => ({
- ...s, items: s.items.map((item) => item.id === editItem.id ? { ...item, name: formName, price, currency: editCurrency } : item),
+ ...s, items: s.items.map((item) => item.id === editItem.id ? { ...item, price, currency: editCurrency } : item),
  })),
  })));
  setEditItem(null); resetForm();
@@ -135,7 +150,6 @@ export function MenuManagement() {
  };
 
  const openEditItem = (item: MenuItem) => {
- setFormName(item.name);
  const cur: Currency = item.currency ?? "foreign";
  setEditCurrency(cur);
  setFormPrice(cur === "domestic" ? Math.round(item.price).toString() : item.price.toFixed(2));
@@ -168,7 +182,7 @@ export function MenuManagement() {
 
  const modalBtnRow = (onCancel: () => void, onConfirm: () => void, label: string, disabled = false) => (
  <div className={`p-5 border-t ${tc.cardBorder} flex justify-end gap-2`}>
- <button onClick={onCancel} className={`px-3.5 py-1.5 text-[0.75rem] rounded-lg cursor-pointer transition-colors ${tc.btnSecondary}`}>Cancel</button>
+ <button onClick={onCancel} className={`px-3.5 py-1.5 text-[0.75rem] rounded-lg cursor-pointer transition-colors ${tc.btnSecondary}`}>{t("common.cancel")}</button>
  <button onClick={onConfirm} disabled={disabled} className={`px-3.5 py-1.5 text-[0.75rem] rounded-lg text-white transition-colors ${disabled ? "bg-blue-600/50 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 cursor-pointer"}`}>{label}</button>
  </div>
  );
@@ -180,20 +194,20 @@ export function MenuManagement() {
  <div className="flex items-center justify-between gap-2">
  <div className="min-w-0">
  <h3 className={`text-[0.9375rem] ${tc.heading} flex items-center gap-2`}>
- <UtensilsCrossed className="w-4 h-4 text-blue-400 shrink-0" /> Menu Management
+ <UtensilsCrossed className="w-4 h-4 text-blue-400 shrink-0" /> {t("settings.menuManagement.title")}
  </h3>
- <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>Select a sub-category and add items from the catalog</p>
+ <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>{t("settings.menuManagement.subtitle")}</p>
  </div>
- <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-600/20 text-blue-400 text-[0.6875rem] shrink-0">{totalItems} items</span>
+ <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-600/20 text-blue-400 text-[0.6875rem] shrink-0">{t("settings.menuManagement.itemsCount", { count: totalItems })}</span>
  </div>
  </div>
 
  {/* Stats */}
  <div className="grid grid-cols-3 gap-2">
  {[
- { label: "Categories", value: categories.length },
- { label: "Sub-Categories", value: categories.reduce((s, c) => s + c.subCategories.length, 0) },
- { label: "Total Items", value: totalItems },
+ { label: t("settings.menuManagement.statCategories"), value: categories.length },
+ { label: t("settings.menuManagement.statSubCategories"), value: categories.reduce((s, c) => s + c.subCategories.length, 0) },
+ { label: t("settings.menuManagement.statTotalItems"), value: totalItems },
  ].map((s) => (
  <div key={s.label} className={`${tc.card} rounded-lg p-3`}>
  <p className={`text-[0.6875rem] ${tc.subtext}`}>{s.label}</p>
@@ -204,7 +218,7 @@ export function MenuManagement() {
 
  {/* Main Categories */}
  <div className={`${tc.card} rounded-lg p-4`}>
- <h4 className={`text-[0.8125rem] ${tc.subtext} mb-3`}>Main Categories</h4>
+ <h4 className={`text-[0.8125rem] ${tc.subtext} mb-3`}>{t("settings.menuManagement.mainCategories")}</h4>
  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
  {categories.map((cat) => (
  <button key={cat.id} onClick={() => { setSelectedCat(cat.id); setSelectedSub(null); }} className={catBtnCls(selectedCat === cat.id)}>{cat.label}</button>
@@ -215,7 +229,7 @@ export function MenuManagement() {
  {/* Sub Categories */}
  {currentCat && (
  <div className={`${tc.card} rounded-lg p-4`}>
- <h4 className={`text-[0.8125rem] ${tc.subtext} mb-3`}>{currentCat.label} - Sub-Categories</h4>
+ <h4 className={`text-[0.8125rem] ${tc.subtext} mb-3`}>{t("settings.menuManagement.subCategoriesTitle", { cat: currentCat.label })}</h4>
  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
  {currentCat.subCategories.map((sub) => (
  <button key={sub.id} onClick={() => setSelectedSub(selectedSub === sub.id ? null : sub.id)} className={subCatBtnCls(selectedSub === sub.id)}>
@@ -229,40 +243,46 @@ export function MenuManagement() {
  {/* Items Grid */}
  <div className={`${tc.card} rounded-lg p-4`}>
  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between mb-3">
- <h4 className={`text-[0.8125rem] ${tc.subtext}`}>{currentSub ? `${currentSub.label} Items` : currentCat ? `All ${currentCat.label} Items` : "Items"}</h4>
+ <h4 className={`text-[0.8125rem] ${tc.subtext}`}>
+ {currentSub
+ ? t("settings.menuManagement.itemsTitleSub", { sub: currentSub.label })
+ : currentCat
+ ? t("settings.menuManagement.itemsTitleAll", { cat: currentCat.label })
+ : t("settings.menuManagement.itemsTitle")}
+ </h4>
  <div className="flex items-center gap-2">
  <div className="relative flex-1 sm:flex-none">
  <Search className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${tc.muted}`} />
- <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search items..." className={`pl-8 pr-3 py-1.5 rounded-lg border-0 text-[0.75rem] focus:outline-none w-full sm:w-40 ${tc.isDark ? "bg-[#3a3f4d] text-gray-100 placeholder:text-gray-500 gray-600" : "bg-gray-100 text-gray-900 placeholder:text-gray-400 gray-300"}`} />
+ <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("settings.menuManagement.searchPlaceholder")} className={`pl-8 pr-3 py-1.5 rounded-lg border-0 text-[0.75rem] focus:outline-none w-full sm:w-40 ${tc.isDark ? "bg-[#3a3f4d] text-gray-100 placeholder:text-gray-500 gray-600" : "bg-gray-100 text-gray-900 placeholder:text-gray-400 gray-300"}`} />
  </div>
  {selectedSub && (
- <button onClick={openAddItem} className="flex items-center gap-1 px-2.5 py-1 text-[0.6875rem] rounded-lg bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-colors shrink-0"><Plus className="w-3 h-3" /> Add Item</button>
+ <button onClick={openAddItem} className="flex items-center gap-1 px-2.5 py-1 text-[0.6875rem] rounded-lg bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-colors shrink-0"><Plus className="w-3 h-3" /> {t("settings.menuManagement.addItem")}</button>
  )}
  </div>
  </div>
- {!selectedSub && <p className={`text-[0.75rem] ${tc.muted} mb-3`}>Select a sub-category above to add items</p>}
+ {!selectedSub && <p className={`text-[0.75rem] ${tc.muted} mb-3`}>{t("settings.menuManagement.selectSubToAdd")}</p>}
  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
  {filteredItems.map((item) => {
  const isInactive = item.active === false;
  return (
  <div key={item.id} className="relative group">
  <div className={`${itemTileCls} ${isInactive ? "opacity-50 grayscale" : ""}`}>
- <p className="leading-tight">{item.name}</p>
+ <p className="leading-tight">{menuItemDisplayName(t, item)}</p>
  <p className={`text-[0.75rem] mt-0.5 ${tc.isDark ? "text-slate-400" : "text-slate-500"}`}>{item.currency === "domestic" ? `₩${Math.round(item.price).toLocaleString()}` : `$${item.price.toFixed(2)}`}</p>
  {isInactive && (
- <span className="absolute bottom-1 left-1.5 px-1.5 py-0.5 rounded bg-slate-600 text-white text-[0.5625rem]">Inactive</span>
+ <span className="absolute bottom-1 left-1.5 px-1.5 py-0.5 rounded bg-slate-600 text-white text-[0.5625rem]">{t("settings.menuManagement.inactive")}</span>
  )}
  </div>
  <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
  <button
  onClick={() => toggleItemActive(item.id)}
  className={`w-5 h-5 rounded bg-black/60 flex items-center justify-center cursor-pointer ${isInactive ? "text-blue-400 hover:text-blue-300" : "text-gray-300 hover:text-amber-400"}`}
- title={isInactive ? "Activate" : "Deactivate"}
+ title={isInactive ? t("settings.menuManagement.activate") : t("settings.menuManagement.deactivate")}
  >
  {isInactive ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
  </button>
  <button onClick={() => openEditItem(item)} className="w-5 h-5 rounded bg-black/60 text-gray-300 hover:text-blue-400 flex items-center justify-center cursor-pointer"><Edit3 className="w-3 h-3" /></button>
- <button onClick={() => setDeleteConfirm({ id: item.id, name: item.name })} className="w-5 h-5 rounded bg-black/60 text-gray-300 hover:text-red-400 flex items-center justify-center cursor-pointer"><X className="w-3 h-3" /></button>
+ <button onClick={() => setDeleteConfirm({ id: item.id, name: menuItemDisplayName(t, item) })} className="w-5 h-5 rounded bg-black/60 text-gray-300 hover:text-red-400 flex items-center justify-center cursor-pointer"><X className="w-3 h-3" /></button>
  </div>
  </div>
  );
@@ -271,7 +291,7 @@ export function MenuManagement() {
  {filteredItems.length === 0 && (
  <div className={`text-center py-8 ${tc.muted}`}>
  <UtensilsCrossed className="w-8 h-8 mx-auto mb-2 opacity-40" />
- <p className="text-[0.8125rem]">{search ? "No items match your search" : "No items in this category"}</p>
+ <p className="text-[0.8125rem]">{search ? t("settings.menuManagement.emptySearch") : t("settings.menuManagement.emptyCategory")}</p>
  </div>
  )}
  </div>
@@ -279,8 +299,8 @@ export function MenuManagement() {
  {/* Add Item Modal — multi-select catalog */}
  <InlineModal open={showAddItem} onClose={() => setShowAddItem(false)} size="md">
  <div className={`p-5 border-b ${tc.cardBorder}`}>
- <h3 className={`text-[1rem] ${tc.heading}`}>Add items to {currentSub?.label}</h3>
- <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>Select one or more items from the catalog</p>
+ <h3 className={`text-[1rem] ${tc.heading}`}>{t("settings.menuManagement.addModalTitle", { sub: currentSub?.label ?? "" })}</h3>
+ <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>{t("settings.menuManagement.addModalDesc")}</p>
  </div>
  <div className="p-5 space-y-3">
  <div className="relative">
@@ -289,7 +309,7 @@ export function MenuManagement() {
  autoFocus
  value={addItemSearch}
  onChange={(e) => setAddItemSearch(e.target.value)}
- placeholder="Search food items..."
+ placeholder={t("settings.menuManagement.addModalSearchPh")}
  className={`${tc.input} pl-10`}
  />
  </div>
@@ -318,7 +338,7 @@ export function MenuManagement() {
  >
  <div className="flex items-start justify-between gap-2">
  <div className="min-w-0">
- <p className={`text-[0.8125rem] leading-tight ${tc.heading}`}>{f.name}</p>
+ <p className={`text-[0.8125rem] leading-tight ${tc.heading}`}>{t(`menuItems.${f.id}`, { defaultValue: f.name })}</p>
  <p className={`text-[0.75rem] mt-0.5 ${tc.subtext}`}>${f.price.toFixed(2)}</p>
  </div>
  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
@@ -327,42 +347,56 @@ export function MenuManagement() {
  {selected && <Check className="w-3 h-3 text-white" />}
  </div>
  </div>
- {already && <span className={`mt-1 inline-block text-[0.625rem] ${tc.muted}`}>Already added</span>}
+ {already && <span className={`mt-1 inline-block text-[0.625rem] ${tc.muted}`}>{t("settings.menuManagement.alreadyAdded")}</span>}
  </button>
  );
  })}
  </div>
  {filteredCatalog.length === 0 && (
  <div className={`text-center py-6 ${tc.muted}`}>
- <p className="text-[0.8125rem]">No items match your search</p>
+ <p className="text-[0.8125rem]">{t("settings.menuManagement.addModalEmpty")}</p>
  </div>
  )}
  </div>
 
  <p className={`text-[0.75rem] ${tc.muted}`}>
- {addItemSelection.size} selected
+ {t("settings.menuManagement.selectedCount", { count: addItemSelection.size })}
  </p>
  </div>
- {modalBtnRow(() => setShowAddItem(false), confirmAddItems, `Add ${addItemSelection.size || ""} item${addItemSelection.size === 1 ? "" : "s"}`.trim(), addItemSelection.size === 0)}
+ {modalBtnRow(
+ () => setShowAddItem(false),
+ confirmAddItems,
+ addItemSelection.size === 0
+ ? t("settings.menuManagement.addItemsCta")
+ : addItemSelection.size === 1
+ ? t("settings.menuManagement.addOneItem")
+ : t("settings.menuManagement.addManyItems", { count: addItemSelection.size }),
+ addItemSelection.size === 0,
+ )}
  </InlineModal>
 
  {/* Edit Item Modal */}
  <InlineModal open={!!editItem} onClose={() => { setEditItem(null); resetForm(); }} size="sm">
- <div className={`p-5 border-b ${tc.cardBorder}`}><h3 className={`text-[1rem] ${tc.heading}`}>Edit Item</h3></div>
+ <div className={`p-5 border-b ${tc.cardBorder}`}><h3 className={`text-[1rem] ${tc.heading}`}>{t("settings.menuManagement.editTitle")}</h3></div>
  <div className="p-5 space-y-4">
  <div>
- <label className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}>Item Name</label>
- <input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="e.g. Shrimp Tempura" className={tc.input} disabled/>
+ <label className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}>{t("settings.menuManagement.itemName")}</label>
+ <input
+ value={editItem ? menuItemDisplayName(t, editItem) : ""}
+ placeholder={t("settings.menuManagement.itemNamePh")}
+ className={tc.input}
+ disabled
+ />
  </div>
  <div>
  <label className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}>
- Price ({editCurrency === "domestic" ? "₩ Domestic" : "$ Foreign"})
+ {editCurrency === "domestic" ? t("settings.menuManagement.priceDomestic") : t("settings.menuManagement.priceForeign")}
  </label>
  <div className={`grid grid-cols-2 gap-1 p-1 rounded-lg mb-2 ${tc.isDark ? "bg-slate-800/60" : "bg-slate-100"}`}>
  {([
- { id: "foreign", label: "Foreign $", sub: "Externalization" },
- { id: "domestic", label: "Domestic ₩", sub: "Internalization" },
- ] as { id: Currency; label: string; sub: string }[]).map(({ id, label, sub }) => {
+ { id: "foreign" as const, label: t("settings.menuManagement.currencyForeign"), sub: t("settings.menuManagement.currencyForeignSub") },
+ { id: "domestic" as const, label: t("settings.menuManagement.currencyDomestic"), sub: t("settings.menuManagement.currencyDomesticSub") },
+ ]).map(({ id, label, sub }) => {
  const active = editCurrency === id;
  return (
  <button
@@ -396,7 +430,7 @@ export function MenuManagement() {
  </div>
  </div>
  </div>
- {modalBtnRow(() => { setEditItem(null); resetForm(); }, updateItem, "Save Changes")}
+ {modalBtnRow(() => { setEditItem(null); resetForm(); }, updateItem, t("settings.menuManagement.saveChanges"))}
  </InlineModal>
 
  {/* Delete Confirmation Modal */}
@@ -406,18 +440,18 @@ export function MenuManagement() {
  <div className={`p-5 border-b ${tc.cardBorder}`}>
  <div className="flex items-center gap-2">
  <AlertTriangle className="w-5 h-5 text-red-400" />
- <h3 className={`text-[1rem] ${tc.heading}`}>Confirm Delete</h3>
+ <h3 className={`text-[1rem] ${tc.heading}`}>{t("settings.menuManagement.confirmDeleteTitle")}</h3>
  </div>
  </div>
  <div className="p-5">
  <p className={`text-[0.8125rem] ${tc.subtext}`}>
- Are you sure you want to delete <strong className={tc.heading}>{deleteConfirm.name}</strong>?
+ {t("settings.menuManagement.confirmDeleteBody", { name: deleteConfirm.name })}
  </p>
- <p className={`text-[0.75rem] ${tc.muted} mt-2`}>This action cannot be undone.</p>
+ <p className={`text-[0.75rem] ${tc.muted} mt-2`}>{t("settings.menuManagement.confirmDeleteWarn")}</p>
  </div>
  <div className={`p-5 border-t ${tc.cardBorder} flex justify-end gap-2`}>
- <button onClick={() => setDeleteConfirm(null)} className={`px-3.5 py-1.5 text-[0.75rem] rounded-lg cursor-pointer transition-colors ${tc.btnSecondary}`}>Cancel</button>
- <button onClick={confirmDelete} className="px-3.5 py-1.5 text-[0.75rem] rounded-lg bg-red-600 hover:bg-red-700 text-white cursor-pointer transition-colors">Delete</button>
+ <button onClick={() => setDeleteConfirm(null)} className={`px-3.5 py-1.5 text-[0.75rem] rounded-lg cursor-pointer transition-colors ${tc.btnSecondary}`}>{t("common.cancel")}</button>
+ <button onClick={confirmDelete} className="px-3.5 py-1.5 text-[0.75rem] rounded-lg bg-red-600 hover:bg-red-700 text-white cursor-pointer transition-colors">{t("common.delete")}</button>
  </div>
  </>
  )}

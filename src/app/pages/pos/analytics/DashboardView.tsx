@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   TrendingUp,
   TrendingDown,
@@ -337,39 +338,19 @@ const KPI_DOMESTIC: Record<string, KpiRow> = {
 const PAYMENT_SPLIT: Record<
   "foreign" | "domestic",
   {
-    name: string;
+    method: "credit" | "cash";
     value: number;
     fill: string;
     icon: typeof CreditCard;
   }[]
 > = {
   foreign: [
-    {
-      name: "Credit",
-      value: 78,
-      fill: "#3b82f6",
-      icon: CreditCard,
-    },
-    {
-      name: "Cash",
-      value: 22,
-      fill: "#22c55e",
-      icon: Banknote,
-    },
+    { method: "credit", value: 78, fill: "#3b82f6", icon: CreditCard },
+    { method: "cash", value: 22, fill: "#22c55e", icon: Banknote },
   ],
   domestic: [
-    {
-      name: "Credit",
-      value: 41,
-      fill: "#3b82f6",
-      icon: CreditCard,
-    },
-    {
-      name: "Cash",
-      value: 59,
-      fill: "#22c55e",
-      icon: Banknote,
-    },
+    { method: "credit", value: 41, fill: "#3b82f6", icon: CreditCard },
+    { method: "cash", value: 59, fill: "#22c55e", icon: Banknote },
   ],
 };
 
@@ -402,6 +383,7 @@ function getDataForPeriod(period: Period) {
 }
 
 export function DashboardView() {
+  const { t } = useTranslation();
   const [period, setPeriod] = useState<Period>("week");
   const tc = useThemeClasses();
   const { isDomestic } = useAnalyticsCurrency();
@@ -412,49 +394,37 @@ export function DashboardView() {
   ];
   const kpiDomestic = KPI_DOMESTIC[period];
   const kpiForeign = KPI_FOREIGN[period];
-  const paymentSplit =
-    PAYMENT_SPLIT[isDomestic ? "domestic" : "foreign"];
-
   const fmtMoney = (v: number) =>
     isDomestic
       ? `₩${Math.round(v).toLocaleString()}`
       : `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  const fmtTotalRevenue = () => {
-    const usd = kpiForeign.totalRev;
-    const krw = kpiDomestic.totalRev;
-    if (usd > 0 && krw > 0) {
-      return `$${usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} + ₩${Math.round(krw).toLocaleString()}`;
-    } else if (krw > 0) {
-      return `₩${Math.round(krw).toLocaleString()}`;
-    } else {
-      return `$${usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-  };
-
-  const kpiCards = [
-    {
-      label: "Total Orders",
-      value: kpis.totalOrders,
-      change: kpis.ordChange,
-      up: !kpis.ordChange.startsWith("-"),
-      icon: ShoppingCart,
-    },
-    {
-      label: "Avg Ticket Size",
-      value: fmtMoney(kpis.avgTicket),
-      change: kpis.ticketChange,
-      up: !kpis.ticketChange.startsWith("-"),
-      icon: TrendingUp,
-    },
-    {
-      label: "Cancellations",
-      value: kpis.cancels,
-      change: kpis.cancelChange,
-      up: kpis.cancelChange.startsWith("-"),
-      icon: XCircle,
-    },
-  ];
+  const kpiCards = useMemo(
+    () => [
+      {
+        labelKey: "analytics.dashboard.kpi.totalOrders",
+        value: kpis.totalOrders,
+        change: kpis.ordChange,
+        up: !kpis.ordChange.startsWith("-"),
+        icon: ShoppingCart,
+      },
+      {
+        labelKey: "analytics.dashboard.kpi.avgTicket",
+        value: fmtMoney(kpis.avgTicket),
+        change: kpis.ticketChange,
+        up: !kpis.ticketChange.startsWith("-"),
+        icon: TrendingUp,
+      },
+      {
+        labelKey: "analytics.dashboard.kpi.cancellations",
+        value: kpis.cancels,
+        change: kpis.cancelChange,
+        up: kpis.cancelChange.startsWith("-"),
+        icon: XCircle,
+      },
+    ],
+    [kpis, fmtMoney, t]
+  );
 
   // Bar chart - Peak revenue calculation
   const activeKey = isDomestic ? "revenueKrw" : "revenueUsd";
@@ -467,11 +437,7 @@ export function DashboardView() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-3">
-      <DateFilterBar
-        period={period}
-        setPeriod={setPeriod}
-        title="Sales Dashboard"
-      />
+      <DateFilterBar period={period} setPeriod={setPeriod} />
 
       <AnimatedContent
         animationKey={period}
@@ -482,9 +448,7 @@ export function DashboardView() {
           <div className="grid grid-cols-2 gap-4 sm:gap-5 items-center">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <p className={`text-[0.875rem] ${tc.subtext}`}>
-                  Total Revenue
-                </p>
+                <p className={`text-[0.875rem] ${tc.subtext}`}>{t("analytics.dashboard.totalRevenue")}</p>
                 <span
                   className={`flex items-center gap-0.5 text-[0.8125rem] ${!kpis.revChange.startsWith("-") ? "text-green-500" : "text-red-500"}`}
                 >
@@ -518,7 +482,7 @@ export function DashboardView() {
                 const amountUsd = (kpiForeign.totalRev * foreignItem.value) / 100;
                 const Icon = d.icon;
                 return (
-                  <div key={d.name}>
+                  <div key={d.method}>
                     <div className="flex items-start justify-between mb-1">
                       <div className="flex items-center gap-2 min-w-0">
                         <Icon
@@ -528,7 +492,7 @@ export function DashboardView() {
                         <span
                           className={`text-[0.875rem] ${tc.text2} truncate`}
                         >
-                          {d.name}
+                          {t(`payment.${d.method}`)}
                         </span>
                       </div>
                       <span
@@ -560,7 +524,7 @@ export function DashboardView() {
           <div className="grid grid-cols-3 gap-2">
             {kpiCards.map((kpi) => (
               <div
-                key={kpi.label}
+                key={kpi.labelKey}
                 className={`${tc.card} rounded-xl p-4`}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -584,7 +548,7 @@ export function DashboardView() {
                 <p
                   className={`text-[0.8125rem] ${tc.subtext} mt-0.5`}
                 >
-                  {kpi.label}
+                  {t(kpi.labelKey)}
                 </p>
               </div>
             ))}
@@ -593,13 +557,11 @@ export function DashboardView() {
           <div
             className={`${tc.card} rounded-xl p-4 sm:p-5 flex-1 min-h-[320px] flex flex-col`}
           >
-            <h3 className={`text-[1rem] ${tc.heading}`}>
-              Sales Trend
-            </h3>
+            <h3 className={`text-[1rem] ${tc.heading}`}>{t("analytics.dashboard.salesTrend")}</h3>
             <p
               className={`text-[0.875rem] ${tc.subtext} mt-0.5 mb-3`}
             >
-              Tap on the chart to view revenue and order count
+              {t("analytics.dashboard.salesTrendHint")}
             </p>
             <div className="flex-1 min-h-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -686,9 +648,9 @@ export function DashboardView() {
           {/* Revenue over time - Bar Chart */}
           <div className={`${tc.card} rounded-xl p-4 sm:p-5 flex-1 min-h-[320px] flex flex-col`}>
             <p className={`text-[1rem] ${tc.heading} mb-1`}>
-              Peak revenue at <span className="text-blue-500">{peakEntry.label}</span>
+              {t("analytics.dashboard.peakRevenueAt", { hour: peakEntry.label })}
             </p>
-            <p className={`text-[0.875rem] ${tc.subtext} mb-4`}>Revenue over time</p>
+            <p className={`text-[0.875rem] ${tc.subtext} mb-4`}>{t("analytics.dashboard.revenueOverTime")}</p>
             <div className="flex-1 min-h-[140px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={coloredChartData}>

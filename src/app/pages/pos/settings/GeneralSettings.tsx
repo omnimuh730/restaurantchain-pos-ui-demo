@@ -1,72 +1,31 @@
 import { useState } from "react";
-import {
- Store,
- Clock,
- Phone,
- Timer,
-} from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Store, Clock, Phone, Timer } from "lucide-react";
 
 type DepositCurrency = "foreign" | "domestic";
 import { useThemeClasses } from "../theme-context";
 import { InlineToggle } from "./ui-helpers";
 
-const RESTAURANT_NAME = "Glass Onion";
-const RESTAURANT_DESCRIPTION =
- "Modern Asian fusion restaurant with a curated cocktail bar, serving contemporary dishes inspired by flavors across East and Southeast Asia.";
-const THUMBNAIL_URL =
- "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=600&q=80";
+const THUMBNAIL_URL = "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=600&q=80";
+
+const DAY_KEYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
 
 export function GeneralSettings() {
+ const { t } = useTranslation();
  const tc = useThemeClasses();
  const [mainPhone, setMainPhone] = useState("(555) 000-1234");
  const [altPhone, setAltPhone] = useState("(555) 000-5678");
  const [deposit, setDeposit] = useState("500");
  const [depositCurrency, setDepositCurrency] = useState<DepositCurrency>("foreign");
  const [gracePeriod, setGracePeriod] = useState("20");
- const [hours, setHours] = useState([
- {
- day: "Monday",
- open: "10:00",
- close: "22:00",
+ const [hours, setHours] = useState(() =>
+ DAY_KEYS.map((dayKey, i) => ({
+ dayKey,
+ open: i < 5 ? "10:00" : "11:00",
+ close: i === 6 ? "21:00" : i >= 3 && i < 6 ? "23:00" : "22:00",
  closed: false,
- },
- {
- day: "Tuesday",
- open: "10:00",
- close: "22:00",
- closed: false,
- },
- {
- day: "Wednesday",
- open: "10:00",
- close: "22:00",
- closed: false,
- },
- {
- day: "Thursday",
- open: "10:00",
- close: "23:00",
- closed: false,
- },
- {
- day: "Friday",
- open: "10:00",
- close: "23:00",
- closed: false,
- },
- {
- day: "Saturday",
- open: "11:00",
- close: "23:00",
- closed: false,
- },
- {
- day: "Sunday",
- open: "11:00",
- close: "21:00",
- closed: false,
- },
- ]);
+ })),
+ );
 
  const updateHour = (
  idx: number,
@@ -103,18 +62,18 @@ export function GeneralSettings() {
  <div className="flex items-center justify-between gap-2">
  <div className="min-w-0">
  <h3 className={`text-[0.9375rem] ${tc.heading}`}>
- Restaurant Info
+ {t("settings.general.restaurantInfo")}
  </h3>
  <p
  className={`text-[0.75rem] ${tc.subtext} mt-0.5`}
  >
- Basic information about your restaurant
+ {t("settings.general.restaurantInfoDesc")}
  </p>
  </div>
  <span
  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[0.6875rem] shrink-0 ${tc.badge}`}
  >
- <Store className="w-3 h-3" /> Free Tier
+ <Store className="w-3 h-3" /> {t("settings.general.freeTier")}
  </span>
  </div>
  </div>
@@ -124,22 +83,22 @@ export function GeneralSettings() {
  <label
  className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}
  >
- Restaurant Name
+ {t("settings.general.restaurantName")}
  </label>
  <p className={`text-[0.875rem] ${tc.heading}`}>
- {RESTAURANT_NAME}
+ {t("settings.general.name")}
  </p>
  </div>
  <div>
  <label
  className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}
  >
- Description
+ {t("settings.general.description")}
  </label>
  <p
  className={`text-[0.8125rem] ${tc.subtext} leading-relaxed`}
  >
- {RESTAURANT_DESCRIPTION}
+ {t("settings.general.desc")}
  </p>
  </div>
  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -147,7 +106,7 @@ export function GeneralSettings() {
  <label
  className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}
  >
- Deposit Money
+ {t("settings.general.depositMoney")}
  </label>
  <div className="flex items-center gap-2">
  <div className="relative flex-1">
@@ -187,15 +146,14 @@ export function GeneralSettings() {
  <p
  className={`text-[0.6875rem] ${tc.muted} mt-1`}
  >
- Starting cash in drawer at the beginning of
- each shift
+ {t("settings.general.depositHint")}
  </p>
  </div>
  <div>
  <label
  className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}
  >
- Grace Period
+ {t("settings.general.gracePeriod")}
  </label>
  <div className="relative">
  <Timer
@@ -214,14 +172,13 @@ export function GeneralSettings() {
  <span
  className={`absolute right-3 top-1/2 -translate-y-1/2 text-[0.75rem] ${tc.muted}`}
  >
- min
+ {t("settings.general.min")}
  </span>
  </div>
  <p
  className={`text-[0.6875rem] ${tc.muted} mt-1`}
  >
- Wait time before a reservation is marked as
- no-show
+ {t("settings.general.graceHint")}
  </p>
  </div>
  </div>
@@ -230,14 +187,14 @@ export function GeneralSettings() {
  <label
  className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}
  >
- Thumbnail Image
+ {t("settings.general.thumbnail")}
  </label>
  <div
  className={`rounded-lg overflow-hidden border ${tc.cardBorder} w-full flex-1 min-h-[160px]`}
  >
  <img
  src={THUMBNAIL_URL}
- alt={RESTAURANT_NAME}
+ alt={t("settings.general.name")}
  className="w-full h-full object-cover"
  />
  </div>
@@ -250,17 +207,16 @@ export function GeneralSettings() {
  <h3
  className={`text-[0.9375rem] ${tc.heading} flex items-center gap-2`}
  >
- <Clock className="w-4 h-4 text-blue-400" /> Opening
- Hours
+ <Clock className="w-4 h-4 text-blue-400" /> {t("settings.general.openingHours")}
  </h3>
  <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>
- Set your operating hours for each day
+ {t("settings.general.openingHoursDesc")}
  </p>
  </div>
  <div className="p-3 sm:p-5 space-y-2">
  {hours.map((h, idx) => (
  <div
- key={h.day}
+ key={h.dayKey}
  className={`flex items-center gap-2 sm:gap-3 py-2 sm:py-2.5 px-2 sm:px-3 rounded-lg transition-colors ${
  h.closed
  ? tc.isDark
@@ -272,10 +228,7 @@ export function GeneralSettings() {
  <span
  className={`text-[0.75rem] sm:text-[0.8125rem] ${tc.subtext} w-8 sm:w-24 shrink-0`}
  >
- {h.day.slice(0, 3)}
- <span className="hidden sm:inline">
- {h.day.slice(3)}
- </span>
+ {t(`settings.general.days.${h.dayKey}`)}
  </span>
  <InlineToggle
  checked={!h.closed}
@@ -296,7 +249,7 @@ export function GeneralSettings() {
  <span
  className={`text-[0.6875rem] sm:text-[0.75rem] ${tc.muted} shrink-0`}
  >
- to
+ {t("settings.general.to")}
  </span>
  <input
  type="time"
@@ -312,7 +265,7 @@ export function GeneralSettings() {
  <span
  className={`text-[0.75rem] ${tc.muted} italic`}
  >
- Closed
+ {t("settings.general.closed")}
  </span>
  )}
  </div>
@@ -325,8 +278,7 @@ export function GeneralSettings() {
  <h3
  className={`text-[0.9375rem] ${tc.heading} flex items-center gap-2`}
  >
- <Phone className="w-4 h-4 text-blue-400" /> Phone
- Numbers
+ <Phone className="w-4 h-4 text-blue-400" /> {t("settings.general.phoneNumbers")}
  </h3>
  </div>
  <div className="p-4 sm:p-5 space-y-4">
@@ -334,7 +286,7 @@ export function GeneralSettings() {
  <label
  className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}
  >
- Main Phone
+ {t("settings.general.mainPhone")}
  </label>
  <div className="relative">
  <Phone
@@ -351,7 +303,7 @@ export function GeneralSettings() {
  <label
  className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}
  >
- Alternative Phone
+ {t("settings.general.altPhone")}
  </label>
  <div className="relative">
  <Phone
@@ -364,7 +316,7 @@ export function GeneralSettings() {
  />
  </div>
  <p className={`text-[0.6875rem] ${tc.muted} mt-1`}>
- Optional secondary contact number
+ {t("settings.general.altPhoneHint")}
  </p>
  </div>
  </div>

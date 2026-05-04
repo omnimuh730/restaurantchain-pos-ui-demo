@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useMemo, useCallback, useEffect, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { BellRing, CalendarCheck, ChefHat, X as XIcon } from "lucide-react";
 import { useTheme } from "./theme-context";
@@ -7,22 +8,37 @@ import { INITIAL_ORDERS } from "./kitchen/data";
 
 type ToastKind = "floor";
 
-const TOAST_ICON: Record<ToastKind, { Icon: typeof BellRing; tag: string }> = {
-  floor: { Icon: CalendarCheck, tag: "Floor Plan" },
+const TOAST_ICON: Record<ToastKind, typeof CalendarCheck> = {
+  floor: CalendarCheck,
 };
 
 const TOAST_GRAD: Record<ToastKind, string> = {
   floor: "from-blue-500 to-blue-700",
 };
 void ChefHat;
+void BellRing;
 
 function fmtNow() {
-  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
 }
 
-function RichToast({ kind, title, desc, t }: { kind: ToastKind; title: string; desc?: string; t: string | number }) {
+function RichToast({
+  kind,
+  title,
+  desc,
+  toastId,
+  tag,
+  dismissLabel,
+}: {
+  kind: ToastKind;
+  title: string;
+  desc?: string;
+  toastId: string | number;
+  tag: string;
+  dismissLabel: string;
+}) {
   const { isDark } = useTheme();
-  const { Icon, tag } = TOAST_ICON[kind];
+  const Icon = TOAST_ICON[kind];
   const grad = TOAST_GRAD[kind];
 
   const bg = isDark
@@ -57,11 +73,12 @@ function RichToast({ kind, title, desc, t }: { kind: ToastKind; title: string; d
           {desc && <p className={`text-[0.75rem] mt-0.5 truncate ${isDark ? "text-slate-400" : "text-slate-500"}`}>{desc}</p>}
         </div>
         <button
-          onClick={() => toast.dismiss(t)}
+          type="button"
+          onClick={() => toast.dismiss(toastId)}
           className={`shrink-0 w-6 h-6 rounded-md flex items-center justify-center cursor-pointer transition-colors ${
             isDark ? "text-slate-500 hover:text-slate-200 hover:bg-white/5" : "text-slate-400 hover:text-slate-700 hover:bg-slate-100"
           }`}
-          aria-label="Dismiss"
+          aria-label={dismissLabel}
         >
           <XIcon className="w-3.5 h-3.5" />
         </button>
@@ -85,9 +102,7 @@ export interface NotifyPrefs {
   kitchen: boolean;
 }
 
-const SAMPLE_RESERVATION_GUESTS = ["J. Park", "M. Lee", "K. Choi", "D. Kim", "H. Yoon", "S. Baek"];
-const SAMPLE_KITCHEN_ITEMS = ["Bibimbap", "Pad Thai", "Carbonara", "Ribeye Steak", "Seafood Pasta", "Green Curry"];
-const SAMPLE_TABLES_KITCHEN = ["Table 4", "Table 8", "Table 12", "Bar 2", "Table 16"];
+const SAMPLE_RESERVATION_GUEST_KEYS = ["parkJ", "leeS", "choiM", "kimM", "yoonA", "baekJ"] as const;
 
 interface NavBadgeValue {
   badges: Partial<Record<NavId, number>>;
@@ -111,6 +126,7 @@ const NavBadgeContext = createContext<NavBadgeValue>({
 });
 
 export function NavBadgeProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const { role } = useTheme();
   const notifiableRole = role === "Admin" || role === "Waiter" || role === "Cashier";
   const [badges, setBadges] = useState<Partial<Record<NavId, number>>>(INITIAL_BADGES);
@@ -123,35 +139,50 @@ export function NavBadgeProvider({ children }: { children: ReactNode }) {
     setPrefs((p) => ({ ...p, [k]: !p[k] }));
   }, []);
 
-  // Demo: simulate reservation events ~every 45s (request / cancel / time update)
   useEffect(() => {
     const timer = setInterval(() => {
-      const guest = SAMPLE_RESERVATION_GUESTS[Math.floor(Math.random() * SAMPLE_RESERVATION_GUESTS.length)];
+      const gk = SAMPLE_RESERVATION_GUEST_KEYS[Math.floor(Math.random() * SAMPLE_RESERVATION_GUEST_KEYS.length)];
+      const guestName = t(`guests.${gk}`);
       const party = 2 + Math.floor(Math.random() * 5);
       const event = Math.random();
-      let title = "New reservation request";
-      let desc = `${guest} · ${party} guests`;
+      let title = t("navToasts.reservationNew");
+      let desc = t("navToasts.guestsCount", { guest: guestName, count: party });
+      let bumpBadge = true;
       if (event < 0.34) {
-        title = "Reservation canceled";
-        desc = `${guest} canceled`;
+        bumpBadge = false;
+        title = t("navToasts.reservationCanceled");
+        desc = t("navToasts.guestCanceled", { guest: guestName });
       } else if (event < 0.67) {
-        const newTime = `${5 + Math.floor(Math.random() * 4)}:${Math.random() < 0.5 ? "00" : "30"} PM`;
-        title = "Reservation time updated";
-        desc = `${guest} · moved to ${newTime}`;
+        bumpBadge = false;
+        const hour = 17 + Math.floor(Math.random() * 4);
+        const minute = Math.random() < 0.5 ? 0 : 30;
+        const d = new Date();
+        d.setHours(hour, minute, 0, 0);
+        const newTime = d.toLocaleTimeString("ko-KR", { hour: "numeric", minute: "2-digit" });
+        title = t("navToasts.reservationTimeUpdated");
+        desc = t("navToasts.movedTo", { guest: guestName, time: newTime });
       }
-      if (title === "New reservation request") {
+      if (bumpBadge) {
         setBadges((prev) => ({ ...prev, "": (prev[""] ?? 0) + 1 }));
       }
       if (prefs.floor && notifiableRole) {
-        toast.custom((t) => (
-          <RichToast kind="floor" t={t} title={title} desc={desc} />
-        ), { duration: 5000 });
+        toast.custom(
+          (toastId) => (
+            <RichToast
+              kind="floor"
+              toastId={toastId}
+              title={title}
+              desc={desc}
+              tag={t("navToasts.floorTag")}
+              dismissLabel={t("navToasts.dismiss")}
+            />
+          ),
+          { duration: 5000 },
+        );
       }
     }, 6000);
     return () => clearInterval(timer);
-  }, [prefs.floor, notifiableRole]);
-  void SAMPLE_KITCHEN_ITEMS;
-  void SAMPLE_TABLES_KITCHEN;
+  }, [prefs.floor, notifiableRole, t]);
 
   const value = useMemo(
     () => ({ badges, setBadge, serverCalls: [] as ServerCall[], prefs, togglePref }),

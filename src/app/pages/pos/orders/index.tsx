@@ -1,13 +1,16 @@
 import { useState, useRef, useCallback, useEffect, lazy, Suspense, startTransition } from "react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 import { INITIAL_TABLE_ORDERS, TABLES } from "./data";
 import type { OrderItem } from "./data";
 import { OrderPanel } from "./OrderPanel";
 import { MenuPanel } from "./MenuPanel";
+import { tableLabel } from "../../../../i18n/utils";
 
 const PaymentPage = lazy(() => import("../payment"));
 
 export default function Orders() {
+  const { t } = useTranslation();
   const [selectedMainCategory, setSelectedMainCategory] = useState<string>("hot-foods");
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -16,10 +19,10 @@ export default function Orders() {
   const [selectedTable, setSelectedTable] = useState<string>("T12");
   const [tableDropdownOpen, setTableDropdownOpen] = useState(false);
   const [allTableOrders, setAllTableOrders] = useState<Record<string, OrderItem[]>>(INITIAL_TABLE_ORDERS);
-  const [checkCounters] = useState<Record<string, string>>({
-    T1: "Ch. #71", T2: "Ch. #72", T3: "Ch. #73", T4: "Ch. #74", T5: "Ch. #75",
-    T6: "Ch. #76", T7: "Ch. #77", T8: "Ch. #78", T9: "Ch. #79", T10: "Ch. #80",
-    T11: "Ch. #81", T12: "Ch. #85", BAR1: "Ch. #90", BAR2: "Ch. #91", BAR3: "Ch. #92",
+  const [checkCounters] = useState<Record<string, number>>({
+    T1: 71, T2: 72, T3: 73, T4: 74, T5: 75,
+    T6: 76, T7: 77, T8: 78, T9: 79, T10: 80,
+    T11: 81, T12: 85, BAR1: 90, BAR2: 91, BAR3: 92,
   });
 
   const currentOrder = allTableOrders[selectedTable] || [];
@@ -30,7 +33,10 @@ export default function Orders() {
     }));
   };
 
-  const checkNumber = checkCounters[selectedTable] || "Ch. #--";
+  const checkNumber =
+    checkCounters[selectedTable] != null
+      ? t("orders.checkCounter", { num: checkCounters[selectedTable] })
+      : t("orders.checkCounterUnknown");
 
   const [showPayDialog, setShowPayDialog] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
@@ -65,15 +71,30 @@ export default function Orders() {
     setIsDragging(false);
   }, []);
 
-  const addItemToOrder = (item: { id: string; name: string; price: number; currency?: "foreign" | "domestic" }) => {
+  const addItemToOrder = (item: {
+    id: string;
+    price: number;
+    currency?: "foreign" | "domestic";
+    categoryId: string;
+  }) => {
     setCurrentOrder((prev) => {
       const existingNew = prev.find((i) => i.baseId === item.id && !i.ordered);
       if (existingNew) {
         return prev.map((i) => (i.id === existingNew.id ? { ...i, qty: i.qty + 1 } : i));
       }
-      const categoryLabel = selectedSubCategory?.toUpperCase().replace(/-/g, " ") || "UNKNOWN";
       const uniqueId = `${item.id}-${Date.now()}`;
-      return [...prev, { ...item, id: uniqueId, baseId: item.id, qty: 1, category: categoryLabel, ordered: false, currency: item.currency ?? "foreign" }];
+      return [
+        ...prev,
+        {
+          id: uniqueId,
+          baseId: item.id,
+          price: item.price,
+          qty: 1,
+          category: item.categoryId,
+          ordered: false,
+          currency: item.currency ?? "foreign",
+        },
+      ];
     });
   };
 
@@ -230,13 +251,13 @@ export default function Orders() {
             payAnim ? "translate-y-0 sm:translate-x-0" : "translate-y-full sm:translate-y-0 sm:translate-x-full"
           } ${tc.isDark ? "bg-[#1e2330]" : "bg-white"} shadow-2xl`}
         >
-          <Suspense fallback={<div className="p-6 text-sm">Loading…</div>}>
+          <Suspense fallback={<div className="p-6 text-sm">{t("orders.paymentLoading")}</div>}>
             <PaymentPage
               embedded
               totalUsd={totalUsd}
               totalKrw={totalKrw}
               checkNumber={checkNumber}
-              tableLabel={TABLES.find((t) => t.id === selectedTable)?.label ?? selectedTable}
+              tableLabel={tableLabel(t, selectedTable)}
               onClose={() => startTransition(() => setPayOpen(false))}
             />
           </Suspense>

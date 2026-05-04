@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses, useTheme, ROLE_NAV_ACCESS } from "../theme-context";
 import { PAYMENT_CARDS as INITIAL_CARDS } from "./data";
 import { InlineModal, InlineToggle } from "./ui-helpers";
@@ -6,6 +7,7 @@ import { useNavBadges } from "../NavBadgeContext";
 import { Shield, Eye, EyeOff, CreditCard, Check, X, QrCode, ScanLine, Camera, Loader2, Bell, LayoutGrid, ClipboardList, ChefHat } from "lucide-react";
 
 export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnly?: boolean }) {
+  const { t } = useTranslation();
   const tc = useThemeClasses();
   const { role } = useTheme();
   const { prefs, togglePref } = useNavBadges();
@@ -51,7 +53,7 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
       brand: "credit card",
       last4: digits.slice(-4),
       expiry: "12/28",
-      holderName: "New Card",
+      holderName: t("settings.security.newCardHolder"),
     };
     setCards((prev) => [...prev, newCard]);
     setShowAddCard(false);
@@ -104,29 +106,29 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
       {/* Password */}
       <div className={`${tc.card} rounded-lg`}>
         <div className={`p-4 sm:p-5 border-b ${tc.cardBorder}`}>
-          <h3 className={`text-[0.9375rem] ${tc.heading} flex items-center gap-2`}><Shield className="w-4 h-4 text-blue-400" /> Password Settings</h3>
-          <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>Update your manager PIN or account password</p>
+          <h3 className={`text-[0.9375rem] ${tc.heading} flex items-center gap-2`}><Shield className="w-4 h-4 text-blue-400" /> {t("settings.security.passwordTitle")}</h3>
+          <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>{t("settings.security.passwordDesc")}</p>
         </div>
         <div className="p-4 sm:p-5 space-y-4">
           <div>
-            <label className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}>New Password</label>
+            <label className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}>{t("settings.security.newPassword")}</label>
             <div className="relative">
-              <input type={showPw ? "text" : "password"} value={password} onChange={(e) => { setPassword(e.target.value); setPasswordUpdated(false); }} placeholder="Enter new password" className={`${tc.input} pr-10`} />
+              <input type={showPw ? "text" : "password"} value={password} onChange={(e) => { setPassword(e.target.value); setPasswordUpdated(false); }} placeholder={t("settings.security.newPasswordPh")} className={`${tc.input} pr-10`} />
               <button onClick={() => setShowPw(!showPw)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${tc.muted} cursor-pointer`}>
                 {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </div>
           <div>
-            <label className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}>Confirm Password</label>
+            <label className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}>{t("settings.security.confirmPassword")}</label>
             <div className="relative">
-              <input type={showCpw ? "text" : "password"} value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); setPasswordUpdated(false); }} placeholder="Confirm new password" className={`${tc.input} pr-10 ${confirmPassword.length > 0 && confirmPassword !== password ? "border-red-500 focus:border-red-500" : ""}`} />
+              <input type={showCpw ? "text" : "password"} value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); setPasswordUpdated(false); }} placeholder={t("settings.security.confirmPasswordPh")} className={`${tc.input} pr-10 ${confirmPassword.length > 0 && confirmPassword !== password ? "border-red-500 focus:border-red-500" : ""}`} />
               <button onClick={() => setShowCpw(!showCpw)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${tc.muted} cursor-pointer`}>
                 {showCpw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
             {confirmPassword.length > 0 && confirmPassword !== password && (
-              <p className="text-[0.6875rem] text-red-400 mt-1">Passwords do not match</p>
+              <p className="text-[0.6875rem] text-red-400 mt-1">{t("settings.security.mismatch")}</p>
             )}
           </div>
           <div className="flex items-center gap-3">
@@ -139,14 +141,14 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
                   : "bg-blue-600 hover:bg-blue-700 text-white"
               }`}
             >
-              Update Password
+              {t("settings.security.updatePassword")}
             </button>
             {passwordUpdated && (
               <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.75rem] ${
                 tc.isDark ? "bg-blue-900/20 text-blue-400 border border-blue-800/30" : "bg-blue-50 text-blue-600 border border-blue-200"
               }`}>
                 <Check className="w-3.5 h-3.5" />
-                Password updated successfully
+                {t("settings.security.updated")}
               </div>
             )}
           </div>
@@ -156,8 +158,8 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
       {/* Notifications */}
       <div className={`${tc.card} rounded-lg`}>
         <div className={`p-4 sm:p-5 border-b ${tc.cardBorder}`}>
-          <h3 className={`text-[0.9375rem] ${tc.heading} flex items-center gap-2`}><Bell className="w-4 h-4 text-blue-400" /> Notifications</h3>
-          <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>Toggle toast alerts for incoming activity</p>
+          <h3 className={`text-[0.9375rem] ${tc.heading} flex items-center gap-2`}><Bell className="w-4 h-4 text-blue-400" /> {t("settings.security.notificationsTitle")}</h3>
+          <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>{t("settings.security.notificationsDesc")}</p>
         </div>
         <div className="p-4 sm:p-5 space-y-3">
           {canFloor && (
@@ -167,8 +169,8 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
                   <LayoutGrid className="w-4 h-4 text-blue-400" />
                 </div>
                 <div className="min-w-0">
-                  <p className={`text-[0.8125rem] ${tc.heading}`}>Floor Plan</p>
-                  <p className={`text-[0.6875rem] ${tc.subtext}`}>New reservation requests</p>
+                  <p className={`text-[0.8125rem] ${tc.heading}`}>{t("settings.security.floorTitle")}</p>
+                  <p className={`text-[0.6875rem] ${tc.subtext}`}>{t("settings.security.floorDesc")}</p>
                 </div>
               </div>
               <InlineToggle checked={prefs.floor} onChange={() => togglePref("floor")} />
@@ -180,8 +182,8 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
                 <ChefHat className="w-4 h-4 text-blue-400" />
               </div>
               <div className="min-w-0">
-                <p className={`text-[0.8125rem] ${tc.heading}`}>Kitchen</p>
-                <p className={`text-[0.6875rem] ${tc.subtext}`}>New chef tickets created</p>
+                <p className={`text-[0.8125rem] ${tc.heading}`}>{t("settings.security.kitchenTitle")}</p>
+                <p className={`text-[0.6875rem] ${tc.subtext}`}>{t("settings.security.kitchenDesc")}</p>
               </div>
             </div>
             <InlineToggle checked={prefs.kitchen} onChange={() => togglePref("kitchen")} />
@@ -192,8 +194,8 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
       {/* Saved Cards */}
       {!passwordOnly && <div className={`${tc.card} rounded-lg`}>
         <div className={`p-4 sm:p-5 border-b ${tc.cardBorder}`}>
-          <h3 className={`text-[0.9375rem] ${tc.heading} flex items-center gap-2`}><CreditCard className="w-4 h-4 text-blue-400" /> Saved Payment Methods</h3>
-          <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>Manage your saved cards for billing</p>
+          <h3 className={`text-[0.9375rem] ${tc.heading} flex items-center gap-2`}><CreditCard className="w-4 h-4 text-blue-400" /> {t("settings.security.cardsTitle")}</h3>
+          <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>{t("settings.security.cardsDesc")}</p>
         </div>
         <div className="p-4 sm:p-5 space-y-2">
           {cards.map((card) => (
@@ -210,10 +212,10 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
                 <CreditCard className="w-4 h-4 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className={`text-[0.8125rem] ${tc.isDark ? "text-gray-200" : "text-gray-700"}`}>Credit Card .... {card.last4}</p>
-                <p className={`text-[0.6875rem] ${tc.muted}`}>{card.holderName} - Exp {card.expiry}</p>
+                <p className={`text-[0.8125rem] ${tc.isDark ? "text-gray-200" : "text-gray-700"}`}>{t("settings.security.creditMask", { last4: card.last4 })}</p>
+                <p className={`text-[0.6875rem] ${tc.muted}`}>{t("settings.security.exp", { holder: card.holderName, expiry: card.expiry })}</p>
               </div>
-              {card.isDefault && <span className="text-[0.625rem] px-2 py-0.5 rounded-lg bg-blue-600/20 text-blue-400">Default</span>}
+              {card.isDefault && <span className="text-[0.625rem] px-2 py-0.5 rounded-lg bg-blue-600/20 text-blue-400">{t("settings.security.default")}</span>}
               {selectedCard === card.id && <Check className="w-4 h-4 text-blue-400" />}
             </div>
           ))}
@@ -223,7 +225,7 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
               tc.isDark ? "border-gray-600 text-gray-500 hover:border-blue-500/30 hover:text-gray-300" : "border-gray-300 text-gray-400 hover:border-blue-400/30 hover:text-gray-600"
             }`}
           >
-            + Add New Card
+            {t("settings.security.addCard")}
           </button>
         </div>
       </div>
@@ -235,7 +237,7 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
       <InlineModal open={showAddCard} onClose={() => { setShowAddCard(false); resetQrState(); }} size="sm">
         <div className={`p-5 border-b ${tc.cardBorder}`}>
           <h3 className={`text-[1rem] ${tc.heading} flex items-center gap-2`}>
-            <CreditCard className="w-5 h-5 text-blue-400" /> Add New Card
+            <CreditCard className="w-5 h-5 text-blue-400" /> {t("settings.security.addCardTitle")}
           </h3>
         </div>
         <div className="p-5 space-y-4">
@@ -249,7 +251,7 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
                   : `${tc.isDark ? "text-gray-400 hover:bg-gray-700" : "text-gray-500 hover:bg-gray-100"}`
               }`}
             >
-              <CreditCard className="w-3.5 h-3.5" /> Type Card Number
+              <CreditCard className="w-3.5 h-3.5" /> {t("settings.security.typeMode")}
             </button>
             <button
               onClick={() => { setAddCardMode("qr"); setNewCardNumber(""); resetQrState(); }}
@@ -259,13 +261,13 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
                   : `${tc.isDark ? "text-gray-400 hover:bg-gray-700" : "text-gray-500 hover:bg-gray-100"}`
               }`}
             >
-              <QrCode className="w-3.5 h-3.5" /> Scan QR Code
+              <QrCode className="w-3.5 h-3.5" /> {t("settings.security.scanMode")}
             </button>
           </div>
 
           {addCardMode === "type" ? (
             <div>
-              <label className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}>Card Number</label>
+              <label className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}>{t("settings.security.cardNumber")}</label>
               <input
                 value={newCardNumber}
                 onChange={(e) => setNewCardNumber(formatCardNumber(e.target.value))}
@@ -273,7 +275,7 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
                 maxLength={19}
                 className={`${tc.input} font-mono tracking-wider`}
               />
-              <p className={`text-[0.6875rem] ${tc.muted} mt-1.5`}>Enter your 16-digit card number</p>
+              <p className={`text-[0.6875rem] ${tc.muted} mt-1.5`}>{t("settings.security.cardNumberHint")}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -304,7 +306,7 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
                     {/* Progress text */}
                     <div className="absolute bottom-3 left-0 right-0 text-center">
                       <span className="text-[0.6875rem] text-blue-400 bg-black/60 px-2 py-0.5 rounded">
-                        Scanning... {qrProgress}%
+                        {t("settings.security.scanning", { pct: qrProgress })}
                       </span>
                     </div>
                   </>
@@ -315,7 +317,7 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
                     <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${tc.isDark ? "bg-blue-900/40" : "bg-blue-900/20"}`}>
                       <Camera className="w-7 h-7 text-blue-400" />
                     </div>
-                    <p className="text-[0.75rem] text-gray-400 text-center px-4">Position QR code within the scanner frame</p>
+                    <p className="text-[0.75rem] text-gray-400 text-center px-4">{t("settings.security.qrPosition")}</p>
                   </div>
                 )}
 
@@ -324,7 +326,7 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
                     <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center">
                       <Check className="w-7 h-7 text-white" />
                     </div>
-                    <p className="text-[0.75rem] text-blue-400">Card scanned successfully!</p>
+                    <p className="text-[0.75rem] text-blue-400">{t("settings.security.qrSuccess")}</p>
                   </div>
                 )}
               </div>
@@ -343,7 +345,7 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
                   onClick={startQrScan}
                   className="w-full flex items-center justify-center gap-2 py-2.5 text-[0.75rem] rounded-lg bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-colors"
                 >
-                  <ScanLine className="w-4 h-4" /> Start Scanning
+                  <ScanLine className="w-4 h-4" /> {t("settings.security.startScan")}
                 </button>
               )}
 
@@ -352,7 +354,7 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
                   onClick={resetQrState}
                   className={`w-full flex items-center justify-center gap-2 py-2.5 text-[0.75rem] rounded-lg cursor-pointer transition-colors ${tc.btnSecondary}`}
                 >
-                  Cancel Scan
+                  {t("settings.security.cancelScan")}
                 </button>
               )}
 
@@ -361,14 +363,14 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
                   onClick={() => { resetQrState(); setNewCardNumber(""); }}
                   className={`w-full flex items-center justify-center gap-2 py-2.5 text-[0.75rem] rounded-lg cursor-pointer transition-colors ${tc.btnSecondary}`}
                 >
-                  Scan Again
+                  {t("settings.security.scanAgain")}
                 </button>
               )}
             </div>
           )}
         </div>
         <div className={`p-5 border-t ${tc.cardBorder} flex justify-end gap-2`}>
-          <button onClick={() => { setShowAddCard(false); resetQrState(); }} className={`px-3.5 py-1.5 text-[0.75rem] rounded-lg cursor-pointer transition-colors ${tc.btnSecondary}`}>Cancel</button>
+          <button onClick={() => { setShowAddCard(false); resetQrState(); }} className={`px-3.5 py-1.5 text-[0.75rem] rounded-lg cursor-pointer transition-colors ${tc.btnSecondary}`}>{t("common.cancel")}</button>
           <button
             onClick={handleAddCard}
             disabled={newCardNumber.replace(/\D/g, "").length < 13}
@@ -378,7 +380,7 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
                 : "bg-blue-600 hover:bg-blue-700 text-white"
             }`}
           >
-            Add Card
+            {t("settings.security.addCardBtn")}
           </button>
         </div>
       </InlineModal>}

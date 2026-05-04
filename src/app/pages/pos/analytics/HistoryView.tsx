@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from "react";
+import { useTranslation, type TFunction } from "react-i18next";
 import {
   Search, Receipt, Calendar, CreditCard, UserX, UserPlus, X,
   Clock, Users, MapPin, Banknote, Hash, ArrowLeft, List, FileText,
@@ -7,200 +8,36 @@ import { useThemeClasses } from "../theme-context";
 import { DateFilterBar, type Period } from "./DateFilterBar";
 import type { DateRange } from "./CustomRangePicker";
 import { useAnalyticsCurrency } from "./currency";
+import { EVENTS, DAY, type EventKind, type EventStatus, type HistoryEvent } from "./history-events";
 
-type EventKind = "order" | "reservation" | "payment" | "no-show" | "walk-in";
-type EventStatus = "completed" | "paid" | "no-show" | "refunded";
-type PaymentMethod = "Credit Card" | "Cash" | "—";
+const TAB_IDS: Array<"all" | EventKind> = ["all", "order", "reservation", "payment", "no-show", "walk-in"];
 
-interface OrderItem {
-  name: string;
-  qty: number;
-  price: number;
-  currency?: "foreign" | "domestic";
-}
-
-interface HistoryEvent {
-  id: string;
-  kind: EventKind;
-  status: EventStatus;
-  timestamp: number; // ms epoch
-  guest: string;
-  table: string;
-  partySize?: number;
-  amount?: number;     // foreign total ($)
-  amountKrw?: number;  // domestic total (₩) — tracked independently
-  paymentMethod?: PaymentMethod;
-  items?: OrderItem[];
-  reservedAt?: string; // HH:MM scheduled
-  arrivedAt?: string;  // HH:MM
-  paidAt?: string;     // HH:MM
-  notes?: string;
-  linkedToId?: string; // walk-in linked to no-show
-}
-
-const HOUR = 60 * 60 * 1000;
-const DAY = 24 * HOUR;
-
-function makeTime(daysAgo: number, hours: number, mins = 0) {
-  const d = new Date();
-  d.setDate(d.getDate() - daysAgo);
-  d.setHours(hours, mins, 0, 0);
-  return d.getTime();
-}
-
-const EVENTS: HistoryEvent[] = [
-  // Today
-  {
-    id: "h-t1", kind: "order", status: "completed", timestamp: makeTime(0, 12, 35),
-    guest: "Park K.", table: "Table 2", partySize: 4, amount: 156.5, paymentMethod: "Credit Card",
-    paidAt: "12:35", items: [
-      { name: "Americano", qty: 2, price: 3.5 }, { name: "Cafe Latte", qty: 1, price: 4 },
-      { name: "Honey Cold Brew", qty: 1, price: 5.5 }, { name: "Croissant", qty: 2, price: 4 },
-      { name: "Tiramisu", qty: 1, price: 6.5 },
-    ],
-  },
-  {
-    id: "h-t2", kind: "payment", status: "paid", timestamp: makeTime(0, 13, 12),
-    guest: "Lee S.", table: "Table 3", partySize: 3, amount: 41, amountKrw: 88_000, paymentMethod: "Cash",
-    paidAt: "13:12",
-  },
-  {
-    id: "h-t3", kind: "reservation", status: "completed", timestamp: makeTime(0, 11, 0),
-    guest: "Choi M.", table: "Table 10", partySize: 5, reservedAt: "11:00", arrivedAt: "11:05",
-    notes: "Confirmed and seated on time.",
-  },
-  // Yesterday
-  {
-    id: "h-y1", kind: "order", status: "completed", timestamp: makeTime(1, 12, 48),
-    guest: "Cho W.", table: "Table 2", partySize: 4, amount: 88.4, paymentMethod: "Credit Card",
-    paidAt: "12:48", items: [
-      { name: "Pad Thai", qty: 2, price: 14 }, { name: "Green Curry", qty: 1, price: 16 },
-      { name: "Iced Latte", qty: 3, price: 4.3 }, { name: "Spring Rolls", qty: 2, price: 8 },
-    ],
-  },
-  {
-    id: "h-y2", kind: "no-show", status: "no-show", timestamp: makeTime(1, 19, 0),
-    guest: "Lim S.", table: "Table 3", partySize: 4, reservedAt: "19:00",
-    notes: "No-show after 20-minute grace period.",
-  },
-  {
-    id: "h-y3", kind: "walk-in", status: "completed", timestamp: makeTime(1, 19, 20),
-    guest: "Walk-in", table: "Table 3", partySize: 3, amount: 67.5, amountKrw: 145_000, paymentMethod: "Cash",
-    arrivedAt: "19:20", paidAt: "20:45", linkedToId: "h-y2", items: [
-      { name: "Mushroom Risotto", qty: 1, price: 18 }, { name: "Caesar Salad", qty: 2, price: 12 },
-      { name: "Garlic Bread", qty: 1, price: 7 }, { name: "Lemonade", qty: 3, price: 4.5 },
-    ],
-  },
-  {
-    id: "h-y4", kind: "order", status: "completed", timestamp: makeTime(1, 18, 30),
-    guest: "Kim E.", table: "Table 6", partySize: 6, amount: 184.25, paymentMethod: "Credit Card",
-    paidAt: "20:55", items: [
-      { name: "Seafood Pasta", qty: 2, price: 22 }, { name: "Carbonara Pasta", qty: 2, price: 18 },
-      { name: "T-bone Steak", qty: 1, price: 38 }, { name: "Caesar Salad", qty: 2, price: 12 },
-      { name: "Tiramisu", qty: 2, price: 6.5 },
-    ],
-  },
-  {
-    id: "h-y5", kind: "no-show", status: "no-show", timestamp: makeTime(1, 21, 0),
-    guest: "Go H.", table: "Table 1", partySize: 2, reservedAt: "21:00",
-  },
-  {
-    id: "h-y6", kind: "walk-in", status: "completed", timestamp: makeTime(1, 21, 20),
-    guest: "Walk-in", table: "Table 1", partySize: 2, amount: 32, paymentMethod: "Credit Card",
-    arrivedAt: "21:20", paidAt: "22:10", linkedToId: "h-y5", items: [
-      { name: "Cappuccino", qty: 2, price: 4.5 }, { name: "Cheesecake", qty: 1, price: 7 },
-      { name: "Hot Chocolate", qty: 1, price: 5 }, { name: "Croissant", qty: 2, price: 4 },
-    ],
-  },
-  {
-    id: "h-y7", kind: "payment", status: "refunded", timestamp: makeTime(1, 13, 30),
-    guest: "Bae R.", table: "Table 5", partySize: 2, amount: 18.5, paymentMethod: "Credit Card",
-    paidAt: "13:30", notes: "Refund issued for cancelled appetizer.",
-  },
-  // 2 days ago
-  {
-    id: "h-2d1", kind: "order", status: "completed", timestamp: makeTime(2, 11, 50),
-    guest: "Seong L.", table: "Table 2", partySize: 4, amount: 46.0, amountKrw: 164_000, paymentMethod: "Cash",
-    paidAt: "13:30", items: [
-      { name: "Vanilla Latte", qty: 2, price: 5 },
-      { name: "Avocado Toast", qty: 2, price: 14 },
-      { name: "Kimchi", qty: 1, price: 5000, currency: "domestic" },
-      { name: "Bibimbap", qty: 1, price: 14000, currency: "domestic" },
-      { name: "Soju", qty: 1, price: 7000, currency: "domestic" },
-      { name: "Bulgogi", qty: 1, price: 18000, currency: "domestic" },
-      { name: "Orange Juice", qty: 1, price: 6 },
-    ],
-  },
-  {
-    id: "h-2d2", kind: "no-show", status: "no-show", timestamp: makeTime(2, 18, 30),
-    guest: "Noh K.", table: "Table 5", partySize: 4, reservedAt: "18:30",
-  },
-  {
-    id: "h-2d3", kind: "walk-in", status: "completed", timestamp: makeTime(2, 18, 50),
-    guest: "Walk-in", table: "Table 5", partySize: 4, amount: 112.8, paymentMethod: "Credit Card",
-    arrivedAt: "18:50", paidAt: "20:20", linkedToId: "h-2d2", items: [
-      { name: "Ribeye Steak", qty: 2, price: 36 }, { name: "Mashed Potatoes", qty: 2, price: 6 },
-      { name: "Red Wine", qty: 2, price: 11 }, { name: "Tiramisu", qty: 1, price: 6.5 },
-    ],
-  },
-  {
-    id: "h-2d4", kind: "order", status: "completed", timestamp: makeTime(2, 19, 30),
-    guest: "Ha D.", table: "Table 10", partySize: 6, amount: 224.6, paymentMethod: "Credit Card",
-    paidAt: "21:55",
-  },
-  {
-    id: "h-2d5", kind: "payment", status: "paid", timestamp: makeTime(2, 21, 10),
-    guest: "Min C.", table: "Table 1", partySize: 2, amount: 22, amountKrw: 47_000, paymentMethod: "Cash",
-  },
-  // 3 days ago
-  {
-    id: "h-3d1", kind: "order", status: "completed", timestamp: makeTime(3, 12, 30),
-    guest: "Koo B.", table: "Table 3", partySize: 4, amount: 94.4, paymentMethod: "Credit Card",
-  },
-  {
-    id: "h-3d2", kind: "no-show", status: "no-show", timestamp: makeTime(3, 17, 30),
-    guest: "Yoo M.", table: "Table 6", partySize: 6, reservedAt: "17:30",
-  },
-  {
-    id: "h-3d3", kind: "walk-in", status: "completed", timestamp: makeTime(3, 17, 50),
-    guest: "Walk-in", table: "Table 6", partySize: 5, amount: 0, amountKrw: 104_000, paymentMethod: "Credit Card",
-    arrivedAt: "17:50", linkedToId: "h-3d2", items: [
-      { name: "Bibimbap", qty: 3, price: 14000, currency: "domestic" },
-      { name: "Bulgogi", qty: 2, price: 18000, currency: "domestic" },
-      { name: "Soju", qty: 2, price: 7000, currency: "domestic" },
-      { name: "Kimchi Pancake", qty: 1, price: 12000, currency: "domestic" },
-    ],
-  },
-  {
-    id: "h-3d4", kind: "order", status: "completed", timestamp: makeTime(3, 19, 0),
-    guest: "Sun R.", table: "Table 8", partySize: 3, amount: 58.6, amountKrw: 126_000, paymentMethod: "Cash",
-  },
-  {
-    id: "h-3d5", kind: "order", status: "completed", timestamp: makeTime(3, 20, 0),
-    guest: "Oh D.", table: "Table 2", partySize: 4, amount: 104.5, paymentMethod: "Credit Card",
-  },
-];
-
-const TABS: { id: "all" | EventKind; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "order", label: "Orders" },
-  { id: "reservation", label: "Reservations" },
-  { id: "payment", label: "Payments" },
-  { id: "no-show", label: "No-Shows" },
-  { id: "walk-in", label: "Walk-ins" },
-];
-
-function relDay(ts: number) {
-  const start = new Date(); start.setHours(0, 0, 0, 0);
+function relDay(ts: number, t: TFunction) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
   const diffDays = Math.floor((start.getTime() - ts) / DAY);
-  if (diffDays <= 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  return `${diffDays} days ago`;
+  if (diffDays <= 0) return t("analytics.history.relative.today");
+  if (diffDays === 1) return t("analytics.history.relative.yesterday");
+  return t("analytics.history.relative.daysAgo", { count: diffDays });
 }
 
 function fmtTime(ts: number) {
-  const d = new Date(ts);
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return new Date(ts).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function paymentLabel(t: TFunction, key?: "credit" | "cash") {
+  if (!key) return "";
+  return key === "credit" ? t("analytics.history.paymentCredit") : t("analytics.history.paymentCash");
+}
+
+function guestName(t: TFunction, key: string) {
+  return t(`guests.${key}`);
+}
+function tableName(t: TFunction, id: string) {
+  return t(`tables.${id}`);
+}
+function menuItemName(t: TFunction, key: string) {
+  return t(`menuItems.${key}`);
 }
 
 function kindIcon(kind: EventKind) {
@@ -223,20 +60,18 @@ function kindAccent(kind: EventKind, isDark: boolean) {
   }
 }
 
-function statusBadge(status: EventStatus, isDark: boolean) {
+function statusBadge(status: EventStatus, isDark: boolean, t: TFunction) {
   const map: Record<EventStatus, string> = {
     completed: isDark ? "bg-emerald-500/15 text-emerald-400" : "bg-emerald-50 text-emerald-700",
     paid: isDark ? "bg-blue-500/15 text-blue-400" : "bg-blue-50 text-blue-700",
     "no-show": isDark ? "bg-slate-500/20 text-slate-300" : "bg-slate-100 text-slate-600",
     refunded: isDark ? "bg-amber-500/15 text-amber-400" : "bg-amber-50 text-amber-700",
   };
-  const labels: Record<EventStatus, string> = {
-    completed: "Completed", paid: "Paid", "no-show": "No-Show", refunded: "Refunded",
-  };
-  return { cls: map[status], label: labels[status] };
+  return { cls: map[status], label: t(`analytics.history.status.${status}`) };
 }
 
 export function HistoryView() {
+  const { t } = useTranslation();
   const tc = useThemeClasses();
   const { pick, isDomestic } = useAnalyticsCurrency();
   const [tab, setTab] = useState<"all" | EventKind>("all");
@@ -296,19 +131,23 @@ export function HistoryView() {
       .filter((e) => tab === "all" ? true : e.kind === tab)
       .filter((e) => {
         if (!q) return true;
-        if (e.guest.toLowerCase().includes(q)) return true;
-        if (e.table.toLowerCase().includes(q)) return true;
         if (e.id.toLowerCase().includes(q)) return true;
-        if (e.paymentMethod?.toLowerCase().includes(q)) return true;
-        if (e.items?.some((it) => it.name.toLowerCase().includes(q))) return true;
-        return false;
+        const hay = [
+          guestName(t, e.guestKey),
+          tableName(t, e.tableId),
+          ...(e.paymentKey ? [paymentLabel(t, e.paymentKey)] : []),
+          ...(e.items?.map((it) => menuItemName(t, it.itemKey)) ?? []),
+        ]
+          .join(" ")
+          .toLowerCase();
+        return hay.includes(q);
       })
       .sort((a, b) => b.timestamp - a.timestamp);
-  }, [tab, period, customRange, q]);
+  }, [tab, period, customRange, q, t]);
 
   const counts = useMemo(() => {
     const base: Record<string, number> = { all: 0 };
-    for (const t of TABS) base[t.id] = 0;
+    for (const id of TAB_IDS) base[id] = 0;
     for (const e of EVENTS) { base.all++; base[e.kind] = (base[e.kind] ?? 0) + 1; }
     return base;
   }, []);
@@ -349,7 +188,7 @@ export function HistoryView() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by order ID, menu item, payer name, table…"
+              placeholder={t("analytics.history.searchPlaceholder")}
               className={`flex-1 bg-transparent outline-none text-[0.8125rem] ${tc.text1}`}
             />
             {search && (
@@ -369,14 +208,14 @@ export function HistoryView() {
           className="flex items-center gap-1 mt-3 overflow-x-auto select-none cursor-grab active:cursor-grabbing [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={{ scrollbarWidth: "none" }}
         >
-          {TABS.map((t) => {
-            const active = tab === t.id;
+          {TAB_IDS.map((tabId) => {
+            const active = tab === tabId;
             return (
               <button
-                key={t.id}
+                key={tabId}
                 onClick={(e) => {
                   if (tabsDragRef.current?.moved) { e.preventDefault(); return; }
-                  setTab(t.id);
+                  setTab(tabId);
                 }}
                 className={`shrink-0 px-3 py-1.5 rounded-md text-[0.8125rem] cursor-pointer transition-colors flex items-center gap-1.5 ${
                   active
@@ -384,10 +223,10 @@ export function HistoryView() {
                     : `${tc.subtext} ${tc.hover}`
                 }`}
               >
-                {t.label}
+                {t(`analytics.history.tabs.${tabId}`)}
                 <span className={`text-[0.6875rem] px-1.5 rounded-full ${
                   active ? "bg-white/20" : tc.isDark ? "bg-slate-700/60" : "bg-slate-200"
-                }`}>{counts[t.id] ?? 0}</span>
+                }`}>{counts[tabId] ?? 0}</span>
               </button>
             );
           })}
@@ -397,9 +236,15 @@ export function HistoryView() {
       {/* KPI strip */}
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: "Events", value: filtered.length.toString() },
-          { label: "Revenue", value: pick({ usd: totalRevenueUsd, krw: totalRevenueKrw }) },
-          { label: "No-Shows", value: noShowCount.toString(), sub: (isDomestic ? refundKrw : refundUsd) ? `Refunds ${pick({ usd: refundUsd, krw: refundKrw })}` : undefined },
+          { label: t("analytics.history.kpiEvents"), value: filtered.length.toString() },
+          { label: t("analytics.history.kpiRevenue"), value: pick({ usd: totalRevenueUsd, krw: totalRevenueKrw }) },
+          {
+            label: t("analytics.history.kpiNoShows"),
+            value: noShowCount.toString(),
+            sub: (isDomestic ? refundKrw : refundUsd)
+              ? t("analytics.history.refunds", { amount: pick({ usd: refundUsd, krw: refundKrw }) })
+              : undefined,
+          },
         ].map((k) => (
           <div key={k.label} className={`${tc.card} rounded-xl p-3`}>
             <p className={`text-[0.75rem] ${tc.subtext}`}>{k.label}</p>
@@ -415,8 +260,12 @@ export function HistoryView() {
         <div className={`${tc.card} rounded-xl flex flex-col min-h-0 overflow-hidden`}>
           <div className={`px-3 sm:px-4 py-2.5 border-b ${tc.cardBorder} flex items-center justify-between gap-2`}>
             <span className={`text-[0.75rem] ${tc.subtext}`}>
-              {filtered.length} {filtered.length === 1 ? "result" : "results"}
-              {isSearching && <span className={`ml-1.5 ${tc.muted}`}>for "{search}"</span>}
+              {filtered.length === 1
+                ? t("analytics.history.results", { count: filtered.length })
+                : t("analytics.history.results_plural", { count: filtered.length })}
+              {isSearching && (
+                <span className={`ml-1.5 ${tc.muted}`}>{t("analytics.history.forQuery", { q: search })}</span>
+              )}
             </span>
             {/* View-mode tab */}
             <div className={`flex items-center rounded-md p-0.5 ${tc.isDark ? "bg-slate-800" : "bg-slate-100"}`}>
@@ -428,9 +277,9 @@ export function HistoryView() {
                     ? tc.isDark ? "bg-slate-700 text-white" : "bg-white text-slate-900 shadow-sm"
                     : tc.subtext
                 } ${isSearching ? "opacity-50 cursor-not-allowed" : ""}`}
-                title={isSearching ? "Receipt view while searching" : "Compact list"}
+                title={isSearching ? t("analytics.history.titleCompactWhileSearch") : t("analytics.history.titleCompact")}
               >
-                <List className="w-3 h-3" /><span className="hidden sm:inline">Compact</span>
+                <List className="w-3 h-3" /><span className="hidden sm:inline">{t("analytics.history.viewCompact")}</span>
               </button>
               <button
                 onClick={() => setViewMode("receipts")}
@@ -440,13 +289,13 @@ export function HistoryView() {
                     : tc.subtext
                 }`}
               >
-                <FileText className="w-3 h-3" /><span className="hidden sm:inline">Receipts</span>
+                <FileText className="w-3 h-3" /><span className="hidden sm:inline">{t("analytics.history.viewReceipts")}</span>
               </button>
             </div>
           </div>
           <div className={`flex-1 overflow-y-auto ${effectiveView === "receipts" ? "p-3 sm:p-4 space-y-3" : ""}`}>
             {filtered.length === 0 ? (
-              <div className={`p-10 text-center text-[0.875rem] ${tc.muted}`}>No history events match the current filters.</div>
+              <div className={`p-10 text-center text-[0.875rem] ${tc.muted}`}>{t("analytics.history.empty")}</div>
             ) : effectiveView === "receipts" ? (
               filtered.map((e) => (
                 <ReceiptCard
@@ -461,7 +310,7 @@ export function HistoryView() {
               filtered.map((e) => {
                 const Icon = kindIcon(e.kind);
                 const accent = kindAccent(e.kind, tc.isDark);
-                const badge = statusBadge(e.status, tc.isDark);
+                const badge = statusBadge(e.status, tc.isDark, t);
                 const isSel = selected?.id === e.id;
                 return (
                   <button
@@ -478,13 +327,21 @@ export function HistoryView() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[0.875rem] ${tc.heading}`}>{e.guest}</span>
+                        <span className={`text-[0.875rem] ${tc.heading}`}>{guestName(t, e.guestKey)}</span>
                         <span className={`text-[0.6875rem] px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.label}</span>
                       </div>
                       <div className={`text-[0.75rem] ${tc.subtext} mt-0.5 flex items-center gap-x-2 gap-y-0.5 flex-wrap`}>
-                        <span className="inline-flex items-center gap-1"><MapPin className="w-3 h-3" />{e.table}</span>
-                        {e.partySize != null && <span className="inline-flex items-center gap-1"><Users className="w-3 h-3" />{e.partySize}P</span>}
-                        <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{relDay(e.timestamp)} · {fmtTime(e.timestamp)}</span>
+                        <span className="inline-flex items-center gap-1"><MapPin className="w-3 h-3" />{tableName(t, e.tableId)}</span>
+                        {e.partySize != null && (
+                          <span className="inline-flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            {t("analytics.history.partySuffix", { count: e.partySize })}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {relDay(e.timestamp, t)} · {fmtTime(e.timestamp)}
+                        </span>
                       </div>
                     </div>
                     <div className={`text-[0.875rem] ${tc.heading} shrink-0 tabular-nums`}>{pick({ usd: e.amount, krw: e.amountKrw })}</div>
@@ -498,7 +355,7 @@ export function HistoryView() {
         {/* Detail pane (desktop) */}
         <div className={`hidden md:flex ${tc.card} rounded-xl flex-col min-h-0 overflow-hidden`}>
           {!selected ? (
-            <div className={`p-10 text-center text-[0.875rem] ${tc.muted}`}>Select an event to view details.</div>
+            <div className={`p-10 text-center text-[0.875rem] ${tc.muted}`}>{t("analytics.history.selectEvent")}</div>
           ) : (
             <DetailPane event={selected} linkedEvent={linkedEvent ?? null} replacement={replacementForNoShow ?? null} tcIsDark={tc.isDark} />
           )}
@@ -518,10 +375,10 @@ export function HistoryView() {
             style={{ maxHeight: "75vh" }}
           >
             <div className={`flex items-center gap-2 px-3 py-2 border-b ${tc.cardBorder} shrink-0`}>
-              <button onClick={() => setSelectedId(null)} className={`p-1.5 rounded cursor-pointer ${tc.hover}`} aria-label="Back">
+              <button onClick={() => setSelectedId(null)} className={`p-1.5 rounded cursor-pointer ${tc.hover}`} aria-label={t("analytics.history.back")}>
                 <ArrowLeft className={`w-4 h-4 ${tc.text1}`} />
               </button>
-              <span className={`text-[0.875rem] ${tc.heading}`}>Event details</span>
+              <span className={`text-[0.875rem] ${tc.heading}`}>{t("analytics.history.eventDetails")}</span>
             </div>
             <div className="min-h-0 flex-1 overflow-hidden flex flex-col">
               <DetailPane event={selected} linkedEvent={linkedEvent ?? null} replacement={replacementForNoShow ?? null} tcIsDark={tc.isDark} />
@@ -546,11 +403,13 @@ function fmtLine(value: number, cur?: "foreign" | "domestic"): string {
 }
 
 function ReceiptCard({ event, query, onOpen, isSelected }: ReceiptCardProps) {
+  const { t } = useTranslation();
   const tc = useThemeClasses();
   const { pick } = useAnalyticsCurrency();
   const Icon = kindIcon(event.kind);
   const accent = kindAccent(event.kind, tc.isDark);
-  const badge = statusBadge(event.status, tc.isDark);
+  const badge = statusBadge(event.status, tc.isDark, t);
+  const payStr = event.paymentKey ? paymentLabel(t, event.paymentKey) : "";
   const subtotalUsd = event.items?.filter((i) => (i.currency ?? "foreign") === "foreign").reduce((s, i) => s + i.qty * i.price, 0) ?? 0;
   const subtotalKrw = event.items?.filter((i) => i.currency === "domestic").reduce((s, i) => s + i.qty * i.price, 0) ?? 0;
 
@@ -568,15 +427,15 @@ function ReceiptCard({ event, query, onOpen, isSelected }: ReceiptCardProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`text-[0.875rem] ${tc.heading}`}>
-              <Highlight text={event.guest} query={query} />
+              <Highlight text={guestName(t, event.guestKey)} query={query} />
             </span>
             <span className={`text-[0.6875rem] px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.label}</span>
           </div>
           <div className={`text-[0.6875rem] ${tc.subtext} mt-0.5 flex items-center gap-x-2 gap-y-0.5 flex-wrap`}>
             <span className="inline-flex items-center gap-1"><Hash className="w-3 h-3" /><Highlight text={event.id} query={query} /></span>
-            <span className="inline-flex items-center gap-1"><MapPin className="w-3 h-3" /><Highlight text={event.table} query={query} /></span>
-            <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{relDay(event.timestamp)} · {fmtTime(event.timestamp)}</span>
-            {event.paymentMethod && <span className="inline-flex items-center gap-1"><Banknote className="w-3 h-3" /><Highlight text={event.paymentMethod} query={query} /></span>}
+            <span className="inline-flex items-center gap-1"><MapPin className="w-3 h-3" /><Highlight text={tableName(t, event.tableId)} query={query} /></span>
+            <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{relDay(event.timestamp, t)} · {fmtTime(event.timestamp)}</span>
+            {payStr && <span className="inline-flex items-center gap-1"><Banknote className="w-3 h-3" /><Highlight text={payStr} query={query} /></span>}
           </div>
         </div>
         <div className="text-right shrink-0">
@@ -587,14 +446,17 @@ function ReceiptCard({ event, query, onOpen, isSelected }: ReceiptCardProps) {
       {event.items && event.items.length > 0 ? (
         <div className="px-3 sm:px-4 py-2">
           <div className={`hidden sm:grid grid-cols-[1fr_40px_64px_64px] gap-2 text-[0.6875rem] ${tc.muted} pb-1`}>
-            <span>Item</span><span className="text-center">Qty</span><span className="text-right">Each</span><span className="text-right">Total</span>
+            <span>{t("analytics.history.colItem")}</span>
+            <span className="text-center">{t("analytics.history.colQty")}</span>
+            <span className="text-right">{t("analytics.history.colEach")}</span>
+            <span className="text-right">{t("analytics.history.colTotal")}</span>
           </div>
           <div className="space-y-0.5">
             {event.items.map((it, i) => {
               const cur = it.currency ?? "foreign";
               return (
                 <div key={i} className={`grid grid-cols-[1fr_40px_64px_64px] gap-2 text-[0.75rem] sm:text-[0.8125rem] ${tc.text1} items-center`}>
-                  <span className="truncate"><Highlight text={it.name} query={query} /></span>
+                  <span className="truncate"><Highlight text={menuItemName(t, it.itemKey)} query={query} /></span>
                   <span className="text-center tabular-nums">{it.qty}</span>
                   <span className={`text-right tabular-nums ${tc.subtext}`}>{fmtLine(it.price, cur)}</span>
                   <span className="text-right tabular-nums">{fmtLine(it.qty * it.price, cur)}</span>
@@ -604,18 +466,30 @@ function ReceiptCard({ event, query, onOpen, isSelected }: ReceiptCardProps) {
           </div>
           <div className={`mt-2 pt-2 border-t ${tc.cardBorder} flex items-center justify-between gap-3 text-[0.75rem] flex-wrap`}>
             <div className={`flex items-center gap-2 ${tc.subtext} flex-wrap`}>
-              {subtotalKrw > 0 && <span>Subtotal ₩{Math.round(subtotalKrw).toLocaleString()}</span>}
+              {subtotalKrw > 0 && (
+                <span>
+                  {t("analytics.history.subtotalDomestic")} ₩{Math.round(subtotalKrw).toLocaleString()}
+                </span>
+              )}
               {subtotalKrw > 0 && subtotalUsd > 0 && <span>·</span>}
-              {subtotalUsd > 0 && <span>Subtotal ${subtotalUsd.toFixed(2)}</span>}
+              {subtotalUsd > 0 && (
+                <span>
+                  {t("analytics.history.subtotalForeign")} ${subtotalUsd.toFixed(2)}
+                </span>
+              )}
             </div>
             <div className={`text-[0.875rem] ${tc.heading} tabular-nums`}>
-              Total {pick({ usd: event.amount ?? subtotalUsd, krw: event.amountKrw ?? subtotalKrw })}
+              {t("analytics.history.total")} {pick({ usd: event.amount ?? subtotalUsd, krw: event.amountKrw ?? subtotalKrw })}
             </div>
           </div>
         </div>
       ) : (
         <div className={`px-3 sm:px-4 py-2 text-[0.75rem] ${tc.muted}`}>
-          {event.kind === "no-show" ? "No receipt — no-show event." : event.kind === "reservation" ? "No receipt — reservation only." : "Receipt summary unavailable."}
+          {event.kind === "no-show"
+            ? t("analytics.history.receiptNoShow")
+            : event.kind === "reservation"
+              ? t("analytics.history.receiptReservation")
+              : t("analytics.history.receiptUnavailable")}
         </div>
       )}
     </button>
@@ -643,11 +517,14 @@ interface DetailPaneProps {
 }
 
 function DetailPane({ event, linkedEvent, replacement, tcIsDark }: DetailPaneProps) {
+  const { t } = useTranslation();
   const tc = useThemeClasses();
   const { pick } = useAnalyticsCurrency();
   const Icon = kindIcon(event.kind);
   const accent = kindAccent(event.kind, tcIsDark);
-  const badge = statusBadge(event.status, tcIsDark);
+  const badge = statusBadge(event.status, tcIsDark, t);
+  const payStr = event.paymentKey ? paymentLabel(t, event.paymentKey) : "";
+  const notesText = event.notesKey ? t(`analytics.history.notes.${event.notesKey}`) : undefined;
   const subtotalUsd = event.items?.filter((i) => (i.currency ?? "foreign") === "foreign").reduce((s, i) => s + i.qty * i.price, 0) ?? 0;
   const subtotalKrw = event.items?.filter((i) => i.currency === "domestic").reduce((s, i) => s + i.qty * i.price, 0) ?? 0;
 
@@ -658,38 +535,50 @@ function DetailPane({ event, linkedEvent, replacement, tcIsDark }: DetailPanePro
           <Icon className="w-4.5 h-4.5" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className={`text-[0.9375rem] ${tc.heading} truncate`}>{event.guest}</p>
-          <p className={`text-[0.75rem] ${tc.subtext}`}>{relDay(event.timestamp)} · {fmtTime(event.timestamp)}</p>
+          <p className={`text-[0.9375rem] ${tc.heading} truncate`}>{guestName(t, event.guestKey)}</p>
+          <p className={`text-[0.75rem] ${tc.subtext}`}>{relDay(event.timestamp, t)} · {fmtTime(event.timestamp)}</p>
         </div>
         <span className={`text-[0.6875rem] px-2 py-0.5 rounded ${badge.cls}`}>{badge.label}</span>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="grid grid-cols-2 gap-2">
-          <DetailRow icon={MapPin} label="Table" value={event.table} />
-          {event.partySize != null && <DetailRow icon={Users} label="Party" value={`${event.partySize} guests`} />}
-          {event.reservedAt && <DetailRow icon={Calendar} label="Reserved" value={event.reservedAt} />}
-          {event.arrivedAt && <DetailRow icon={Clock} label="Arrived" value={event.arrivedAt} />}
-          {event.paidAt && <DetailRow icon={CreditCard} label="Paid at" value={event.paidAt} />}
-          {event.paymentMethod && <DetailRow icon={Banknote} label="Method" value={event.paymentMethod} />}
-          <DetailRow icon={Hash} label="ID" value={event.id} />
+          <DetailRow icon={MapPin} label={t("analytics.history.detailTable")} value={tableName(t, event.tableId)} />
+          {event.partySize != null && (
+            <DetailRow
+              icon={Users}
+              label={t("analytics.history.detailParty")}
+              value={t("analytics.history.detailPartyGuests", { count: event.partySize })}
+            />
+          )}
+          {event.reservedAt && (
+            <DetailRow icon={Calendar} label={t("analytics.history.detailReserved")} value={event.reservedAt} />
+          )}
+          {event.arrivedAt && (
+            <DetailRow icon={Clock} label={t("analytics.history.detailArrived")} value={event.arrivedAt} />
+          )}
+          {event.paidAt && (
+            <DetailRow icon={CreditCard} label={t("analytics.history.detailPaidAt")} value={event.paidAt} />
+          )}
+          {payStr && <DetailRow icon={Banknote} label={t("analytics.history.detailMethod")} value={payStr} />}
+          <DetailRow icon={Hash} label={t("analytics.history.detailId")} value={event.id} />
         </div>
 
         {event.items && event.items.length > 0 && (
           <div>
-            <p className={`text-[0.75rem] ${tc.subtext} mb-1.5`}>Receipt</p>
+            <p className={`text-[0.75rem] ${tc.subtext} mb-1.5`}>{t("analytics.history.receipt")}</p>
             <div className={`rounded-lg border ${tc.cardBorder} overflow-hidden`}>
               <div className={`px-3 py-2 text-[0.6875rem] ${tc.muted} ${tc.isDark ? "bg-slate-800/50" : "bg-slate-50"} flex items-center gap-2`}>
-                <span className="flex-1">Item</span>
-                <span className="w-10 text-center">Qty</span>
-                <span className="w-16 text-right">Price</span>
-                <span className="w-16 text-right">Total</span>
+                <span className="flex-1">{t("analytics.history.colItem")}</span>
+                <span className="w-10 text-center">{t("analytics.history.colQty")}</span>
+                <span className="w-16 text-right">{t("analytics.history.colPrice")}</span>
+                <span className="w-16 text-right">{t("analytics.history.colTotal")}</span>
               </div>
               {event.items.map((it, i) => {
                 const cur = it.currency ?? "foreign";
                 return (
                   <div key={i} className={`px-3 py-1.5 flex items-center gap-2 text-[0.8125rem] ${tc.text1}`}>
-                    <span className="flex-1 truncate">{it.name}</span>
+                    <span className="flex-1 truncate">{menuItemName(t, it.itemKey)}</span>
                     <span className="w-10 text-center tabular-nums">{it.qty}</span>
                     <span className="w-16 text-right tabular-nums">{fmtLine(it.price, cur)}</span>
                     <span className="w-16 text-right tabular-nums">{fmtLine(it.qty * it.price, cur)}</span>
@@ -699,16 +588,18 @@ function DetailPane({ event, linkedEvent, replacement, tcIsDark }: DetailPanePro
               <div className={`px-3 py-2 border-t ${tc.cardBorder} space-y-1`}>
                 {subtotalKrw > 0 && (
                   <div className={`flex justify-between text-[0.75rem] ${tc.subtext}`}>
-                    <span>Subtotal (Domestic)</span><span className="tabular-nums">₩{Math.round(subtotalKrw).toLocaleString()}</span>
+                    <span>{t("analytics.history.subtotalDomestic")}</span>
+                    <span className="tabular-nums">₩{Math.round(subtotalKrw).toLocaleString()}</span>
                   </div>
                 )}
                 {subtotalUsd > 0 && (
                   <div className={`flex justify-between text-[0.75rem] ${tc.subtext}`}>
-                    <span>Subtotal (Foreign)</span><span className="tabular-nums">${subtotalUsd.toFixed(2)}</span>
+                    <span>{t("analytics.history.subtotalForeign")}</span>
+                    <span className="tabular-nums">${subtotalUsd.toFixed(2)}</span>
                   </div>
                 )}
                 <div className={`flex justify-between text-[0.875rem] ${tc.heading}`}>
-                  <span>Total</span>
+                  <span>{t("analytics.history.total")}</span>
                   <span className="tabular-nums">{pick({ usd: event.amount ?? subtotalUsd, krw: event.amountKrw ?? subtotalKrw })}</span>
                 </div>
               </div>
@@ -718,26 +609,32 @@ function DetailPane({ event, linkedEvent, replacement, tcIsDark }: DetailPanePro
 
         {event.kind === "reservation" && (
           <Timeline steps={[
-            { label: "Requested", time: event.reservedAt ?? "—", done: true },
-            { label: "Confirmed", time: event.reservedAt ?? "—", done: true },
-            { label: "Seated", time: event.arrivedAt ?? "—", done: !!event.arrivedAt },
-            { label: "Completed", time: event.paidAt ?? "—", done: event.status === "completed" },
+            { label: t("analytics.history.timelineReservation.requested"), time: event.reservedAt ?? "—", done: true },
+            { label: t("analytics.history.timelineReservation.confirmed"), time: event.reservedAt ?? "—", done: true },
+            { label: t("analytics.history.timelineReservation.seated"), time: event.arrivedAt ?? "—", done: !!event.arrivedAt },
+            { label: t("analytics.history.timelineReservation.completed"), time: event.paidAt ?? "—", done: event.status === "completed" },
           ]} />
         )}
 
         {event.kind === "no-show" && (
           <>
             <Timeline steps={[
-              { label: "Reserved", time: event.reservedAt ?? "—", done: true },
-              { label: "Grace period elapsed", time: "+20 min", done: true, warn: true },
-              { label: "Marked no-show", time: fmtTime(event.timestamp), done: true, warn: true },
-              { label: replacement ? "Walk-in seated" : "Table freed", time: replacement?.arrivedAt ?? "—", done: true },
+              { label: t("analytics.history.timelineNoShow.reserved"), time: event.reservedAt ?? "—", done: true },
+              { label: t("analytics.history.timelineNoShow.grace"), time: t("analytics.history.timelineNoShow.graceTime"), done: true, warn: true },
+              { label: t("analytics.history.timelineNoShow.marked"), time: fmtTime(event.timestamp), done: true, warn: true },
+              {
+                label: replacement
+                  ? t("analytics.history.timelineNoShow.walkInSeated")
+                  : t("analytics.history.timelineNoShow.tableFreed"),
+                time: replacement?.arrivedAt ?? "—",
+                done: true,
+              },
             ]} />
             {replacement && (
               <div className={`rounded-lg p-3 ${tc.isDark ? "bg-sky-500/10" : "bg-sky-50"} border ${tc.isDark ? "border-sky-500/30" : "border-sky-200"}`}>
-                <p className={`text-[0.75rem] ${tc.isDark ? "text-sky-300" : "text-sky-700"} mb-1`}>Walk-in took this table</p>
+                <p className={`text-[0.75rem] ${tc.isDark ? "text-sky-300" : "text-sky-700"} mb-1`}>{t("analytics.history.walkInTookTable")}</p>
                 <p className={`text-[0.875rem] ${tc.heading}`}>
-                  {replacement.guest} · {replacement.partySize}P · {pick({ usd: replacement.amount, krw: replacement.amountKrw })}
+                  {guestName(t, replacement.guestKey)} · {t("analytics.history.partySuffix", { count: replacement.partySize ?? 0 })} · {pick({ usd: replacement.amount, krw: replacement.amountKrw })}
                 </p>
               </div>
             )}
@@ -746,17 +643,17 @@ function DetailPane({ event, linkedEvent, replacement, tcIsDark }: DetailPanePro
 
         {event.kind === "walk-in" && linkedEvent && (
           <div className={`rounded-lg p-3 ${tc.isDark ? "bg-slate-800/50" : "bg-slate-50"} border ${tc.cardBorder}`}>
-            <p className={`text-[0.75rem] ${tc.subtext} mb-1`}>Replaced no-show reservation</p>
+            <p className={`text-[0.75rem] ${tc.subtext} mb-1`}>{t("analytics.history.replacedNoShow")}</p>
             <p className={`text-[0.875rem] ${tc.heading}`}>
-              {linkedEvent.guest} · {linkedEvent.partySize}P · reserved {linkedEvent.reservedAt}
+              {guestName(t, linkedEvent.guestKey)} · {t("analytics.history.partySuffix", { count: linkedEvent.partySize ?? 0 })} · {t("analytics.history.reservedAt", { time: linkedEvent.reservedAt ?? "—" })}
             </p>
           </div>
         )}
 
-        {event.notes && (
+        {notesText && (
           <div className={`rounded-lg p-3 ${tc.isDark ? "bg-slate-800/50" : "bg-slate-50"}`}>
-            <p className={`text-[0.75rem] ${tc.subtext} mb-1`}>Notes</p>
-            <p className={`text-[0.8125rem] ${tc.text1}`}>{event.notes}</p>
+            <p className={`text-[0.75rem] ${tc.subtext} mb-1`}>{t("analytics.history.notesHeading")}</p>
+            <p className={`text-[0.8125rem] ${tc.text1}`}>{notesText}</p>
           </div>
         )}
       </div>
@@ -778,10 +675,11 @@ function DetailRow({ icon: Icon, label, value }: { icon: typeof Clock; label: st
 
 interface TimelineStep { label: string; time: string; done: boolean; warn?: boolean; }
 function Timeline({ steps }: { steps: TimelineStep[] }) {
+  const { t } = useTranslation();
   const tc = useThemeClasses();
   return (
     <div>
-      <p className={`text-[0.75rem] ${tc.subtext} mb-1.5`}>Timeline</p>
+      <p className={`text-[0.75rem] ${tc.subtext} mb-1.5`}>{t("analytics.history.timeline")}</p>
       <ol className="relative pl-5">
         <span className={`absolute left-1.5 top-1 bottom-1 w-px ${tc.isDark ? "bg-slate-700" : "bg-slate-200"}`} />
         {steps.map((s, i) => (

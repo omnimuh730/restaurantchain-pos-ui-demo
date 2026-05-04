@@ -2,10 +2,10 @@ export type OrderStatus = "received" | "in-progress" | "completed";
 
 export interface KitchenOrderItem {
   id: string;
-  name: string;
+  itemKey: string;
   qty: number;
   done: boolean;
-  modifier?: string;
+  modifierKey?: string;
   /** Items from a previous order round — shown grayed out */
   previouslyCompleted?: boolean;
   /** When done is true and qty > 1, how many of the qty are selected for the action. Defaults to qty. */
@@ -14,7 +14,8 @@ export interface KitchenOrderItem {
 
 export interface KitchenOrder {
   id: string;
-  table: string;
+  /** Table id for i18n, e.g. T3, BAR1 */
+  tableId: string;
   status: OrderStatus;
   orderedAt: number; // timestamp ms
   completedAt?: number;

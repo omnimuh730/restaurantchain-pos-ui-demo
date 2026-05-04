@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { ChevronDown, ArrowUpDown, AlertCircle, Filter, ClipboardList, ChefHat } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses, useTheme } from "../theme-context";
 import type { KitchenOrder, OrderStatus, ViewTab, SortMode } from "./types";
 import { INITIAL_ORDERS } from "./data";
@@ -11,6 +12,7 @@ import { useNavBadges } from "../NavBadgeContext";
 const ALL_TABLES = KITCHEN_FLOORS.flatMap((f) => f.tables);
 
 export default function Kitchen() {
+  const { t } = useTranslation();
   const tc = useThemeClasses();
   const { role } = useTheme();
   const isAdmin = role === "Admin";
@@ -29,17 +31,13 @@ export default function Kitchen() {
     return () => clearInterval(iv);
   }, []);
 
-  // Counts of distinct food types (cook types) per status, ignoring quantities.
-  const distinctNames = (items: { name: string }[]) => new Set(items.map((i) => i.name)).size;
-  const receivedCount = distinctNames(
-    orders.filter((o) => o.status === "received").flatMap((o) => o.items)
+  const distinctItemKinds = (items: KitchenOrder["items"]) =>
+    new Set(items.map((i) => `${i.itemKey}|${i.modifierKey ?? ""}`)).size;
+  const receivedCount = distinctItemKinds(orders.filter((o) => o.status === "received").flatMap((o) => o.items));
+  const inProgressCount = distinctItemKinds(
+    orders.filter((o) => o.status === "in-progress").flatMap((o) => o.items.filter((i) => !i.previouslyCompleted))
   );
-  const inProgressCount = distinctNames(
-    orders
-      .filter((o) => o.status === "in-progress")
-      .flatMap((o) => o.items.filter((i) => !i.previouslyCompleted))
-  );
-  const completedCount = distinctNames([
+  const completedCount = distinctItemKinds([
     ...orders.filter((o) => o.status === "completed").flatMap((o) => o.items),
     ...orders
       .filter((o) => o.status === "in-progress")
@@ -51,7 +49,7 @@ export default function Kitchen() {
 
   // Filtered & sorted
   const filtered = orders.filter((o) => {
-    if (!selectedTables.has(o.table)) return false;
+    if (!selectedTables.has(o.tableId)) return false;
     if (activeTab === "completed") {
       return o.status === "completed" || o.items.some((i) => i.previouslyCompleted);
     }
@@ -256,11 +254,23 @@ export default function Kitchen() {
     orders.filter((o) => o.status === "completed").length +
     orders.filter((o) => o.status === "in-progress" && o.items.some((i) => i.previouslyCompleted)).length;
 
-  const TABS: { id: ViewTab; label: string; count: number; orderCount: number }[] = [
-    { id: "received", label: "Received", count: receivedCount, orderCount: receivedOrderCount },
-    { id: "in-progress", label: "In Progress", count: inProgressCount, orderCount: inProgressOrderCount },
-    { id: "completed", label: "Completed", count: completedCount, orderCount: completedOrderCount },
-  ];
+  const TABS = useMemo(
+    () =>
+      [
+        { id: "received" as ViewTab, label: t("kitchen.tabs.received"), count: receivedCount, orderCount: receivedOrderCount },
+        { id: "in-progress" as ViewTab, label: t("kitchen.tabs.inProgress"), count: inProgressCount, orderCount: inProgressOrderCount },
+        { id: "completed" as ViewTab, label: t("kitchen.tabs.completed"), count: completedCount, orderCount: completedOrderCount },
+      ] as const,
+    [
+      t,
+      receivedCount,
+      inProgressCount,
+      completedCount,
+      receivedOrderCount,
+      inProgressOrderCount,
+      completedOrderCount,
+    ]
+  );
 
   return (
     <div className={`h-full flex flex-row ${tc.page} overflow-hidden`}>
@@ -278,7 +288,7 @@ export default function Kitchen() {
               className={`md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer transition-colors ${ tc.isDark ? "bg-slate-700 hover:bg-slate-600 text-slate-200" : "bg-slate-100 hover:bg-slate-200 text-slate-700" } text-[0.8125rem] bg-[#2d59e2]`}
             >
               <Filter className="w-4 h-4" />
-              <span>Tables</span>
+              <span>{t("kitchen.mobileTables")}</span>
               <span className="text-[0.6875rem]">
                 {selectedTables.size}
               </span>
@@ -292,7 +302,7 @@ export default function Kitchen() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${tc.card} text-[0.6875rem] cursor-pointer ${tc.hover} transition-colors ${tc.subtext}`}
               >
                 <ArrowUpDown className="w-3.5 h-3.5" />
-                {sortMode === "oldest" ? "Oldest" : "Newest"}
+                {sortMode === "oldest" ? t("kitchen.sort.oldest") : t("kitchen.sort.newest")}
                 <ChevronDown className="w-3 h-3" />
               </button>
               {showSortDropdown && (
@@ -307,7 +317,7 @@ export default function Kitchen() {
                           sortMode === s ? tc.dropdownItemActive : tc.dropdownItem
                         }`}
                       >
-                        {s === "oldest" ? "Oldest First" : "Newest First"}
+                        {s === "oldest" ? t("kitchen.sort.oldestFirst") : t("kitchen.sort.newestFirst")}
                       </button>
                     ))}
                   </div>
@@ -356,7 +366,7 @@ export default function Kitchen() {
         {sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-500">
             <AlertCircle className="w-10 h-10 mb-3 opacity-40" />
-            <p className="text-[0.875rem]">No orders in this category</p>
+            <p className="text-[0.875rem]">{t("kitchen.emptyNoOrders")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap md:content-start md:items-start gap-3 pb-2 overflow-auto md:h-full">
@@ -379,11 +389,11 @@ export default function Kitchen() {
               // Received tab — merge orders by table
               const groups = new Map<string, KitchenOrder[]>();
               for (const o of sorted) {
-                const arr = groups.get(o.table);
+                const arr = groups.get(o.tableId);
                 if (arr) arr.push(o);
-                else groups.set(o.table, [o]);
+                else groups.set(o.tableId, [o]);
               }
-              return Array.from(groups.entries()).map(([table, group]) => {
+              return Array.from(groups.entries()).map(([tableId, group]) => {
                 const ids = group.map((o) => o.id);
                 const itemToOrder = new Map<string, string>();
                 const mergedItems: KitchenOrder["items"] = [];
@@ -397,7 +407,7 @@ export default function Kitchen() {
                 const merged: KitchenOrder = {
                   ...group[0],
                   id: ids.join("+"),
-                  table,
+                  tableId,
                   orderedAt: earliest,
                   items: mergedItems,
                 };

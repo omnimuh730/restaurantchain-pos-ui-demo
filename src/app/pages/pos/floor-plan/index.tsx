@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CalendarRange, LayoutGrid, TableProperties } from "lucide-react";
 import { useColors, useIsMobile } from "./useColors";
 import { useTheme } from "../theme-context";
@@ -14,6 +15,7 @@ import { CalendarView } from "./CalendarView";
 import { useNavBadges } from "../NavBadgeContext";
 
 export default function FloorPlan() {
+  const { t } = useTranslation();
   const C = useColors();
   const { isDark, role } = useTheme();
   const isMobile = useIsMobile();
@@ -96,9 +98,19 @@ export default function FloorPlan() {
     const num = tables.length + 1;
     const sx = Math.round((80 + Math.random() * 200) / SNAP_GRID) * SNAP_GRID;
     const sy = Math.round((80 + Math.random() * 200) / SNAP_GRID) * SNAP_GRID;
-    const t: Table = { id: `T${Date.now()}`, label: `Table ${num}`, seats: 4, shape: "rect", x: sx, y: sy, width: BASE_W, height: BASE_H, status: "available" };
-    updateTables([...tables, t]);
-    setSelectedTable(t.id);
+    const newT: Table = {
+      id: `T${Date.now()}`,
+      label: t("floorPlan.newTable", { num }),
+      seats: 4,
+      shape: "rect",
+      x: sx,
+      y: sy,
+      width: BASE_W,
+      height: BASE_H,
+      status: "available",
+    };
+    updateTables([...tables, newT]);
+    setSelectedTable(newT.id);
   };
 
   const deleteTable = (id: string) => { updateTables(tables.filter((t) => t.id !== id)); if (selectedTable === id) setSelectedTable(null); };
@@ -106,7 +118,7 @@ export default function FloorPlan() {
   const duplicateTable = (id: string) => {
     const src = tables.find((t) => t.id === id);
     if (!src) return;
-    const dup: Table = { ...src, id: `T${Date.now()}`, label: `${src.label} copy`, x: src.x + 30, y: src.y + 30 };
+    const dup: Table = { ...src, id: `T${Date.now()}`, label: `${src.label}${t("floorPlan.copySuffix")}`, x: src.x + 30, y: src.y + 30 };
     updateTables([...tables, dup]);
     setSelectedTable(dup.id);
   };
@@ -119,15 +131,15 @@ export default function FloorPlan() {
   // Drag table in edit mode
   const handleMouseDown = (e: React.MouseEvent, tableId: string) => {
     if (!editMode) return;
-    const t = tables.find((t) => t.id === tableId);
+    const tbl = tables.find((x) => x.id === tableId);
     const scrollEl = scrollRef.current;
-    if (!t || !scrollEl) return;
+    if (!tbl || !scrollEl) return;
     const rect = scrollEl.getBoundingClientRect();
     const scrollX = scrollEl.scrollLeft;
     const scrollY = scrollEl.scrollTop;
     setDragging(tableId);
     setSelectedTable(tableId);
-    setDragOffset({ x: (e.clientX - rect.left + scrollX) / zoom - t.x, y: (e.clientY - rect.top + scrollY) / zoom - t.y });
+    setDragOffset({ x: (e.clientX - rect.left + scrollX) / zoom - tbl.x, y: (e.clientY - rect.top + scrollY) / zoom - tbl.y });
     e.preventDefault();
   };
 
@@ -189,13 +201,13 @@ export default function FloorPlan() {
         <div />
         <div className="flex gap-1 rounded-lg justify-self-center" style={{ background: C.raised }}>
           <button onClick={() => setViewMode("floor")} className="flex items-center gap-2 px-4 py-2 rounded transition-all cursor-pointer text-sm whitespace-nowrap" style={{ background: viewMode === "floor" ? C.primary : "transparent", color: viewMode === "floor" ? "#ffffff" : C.text2 }}>
-            <LayoutGrid size={20} /><span className="hidden sm:inline">Floor View</span>
+            <LayoutGrid size={20} /><span className="hidden sm:inline">{t("floorPlanUi.floorView")}</span>
           </button>
           <button onClick={() => setViewMode("table")} className="flex items-center gap-2 px-4 py-2 rounded transition-all cursor-pointer text-sm whitespace-nowrap" style={{ background: viewMode === "table" ? C.primary : "transparent", color: viewMode === "table" ? "#ffffff" : C.text2 }}>
-            <TableProperties size={20} /><span className="hidden sm:inline">Table View</span>
+            <TableProperties size={20} /><span className="hidden sm:inline">{t("floorPlanUi.tableView")}</span>
           </button>
           <button onClick={() => setViewMode("calendar")} className="flex items-center gap-2 px-4 py-2 rounded transition-all cursor-pointer text-sm whitespace-nowrap" style={{ background: viewMode === "calendar" ? C.primary : "transparent", color: viewMode === "calendar" ? "#ffffff" : C.text2 }}>
-            <CalendarRange size={20} /><span className="hidden sm:inline">Calendar View</span>
+            <CalendarRange size={20} /><span className="hidden sm:inline">{t("floorPlanUi.calendarView")}</span>
           </button>
         </div>
         <div />

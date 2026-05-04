@@ -1,6 +1,7 @@
 export interface Table {
   id: string;
-  label: string;
+  /** Optional override; default label from i18n `tables.<id>` */
+  label?: string;
   seats: number;
   shape: "rect" | "circle";
   x: number;
@@ -11,13 +12,15 @@ export interface Table {
   revenue?: number;
   occupiedSeats?: number;
   guestName?: string;
+  guestKey?: string;
   reservationTime?: string;
-  orderItems?: { name: string; qty: number; price?: number }[];
+  orderItems?: { itemKey: string; qty: number; price?: number }[];
 }
 
 export interface Floor {
   id: string;
-  name: string;
+  /** Custom floor title; default `t('floorPlan.floorNames.<id>')` */
+  name?: string;
   tables: Table[];
 }
 
@@ -27,6 +30,8 @@ export interface Reservation {
   id: string;
   tableId: string;
   guestName: string;
+  /** When set, UI shows `t('guests.<guestKey>')` instead of guestName */
+  guestKey?: string;
   partySize: number;
   startTime: string;
   duration: number;

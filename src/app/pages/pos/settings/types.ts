@@ -2,9 +2,9 @@ import type { ComponentType } from "react";
 
 export interface SettingGroup {
   id: string;
-  label: string;
+  labelKey: string;
+  descKey: string;
   icon: ComponentType<{ className?: string }>;
-  description: string;
 }
 
 export type StaffRole = "Waiter" | "Chef" | "Cashier";
@@ -13,6 +13,8 @@ export type StaffStatus = "active" | "inactive" | "pending";
 
 export interface StaffMember {
   id: string;
+  /** When set, UI shows `t(nameKey)`; otherwise `name`. */
+  nameKey?: string;
   name: string;
   username: string;
   role: StaffRole;
@@ -47,6 +49,7 @@ export interface MenuSubCategory {
 
 export interface MenuItem {
   id: string;
+  /** English fallback used as i18n `defaultValue` for `menuItems.{id}`; display is always resolved from locale when a key exists. */
   name: string;
   price: number;
   currency?: "foreign" | "domestic";
@@ -63,7 +66,5 @@ export interface RoleConfig {
 
 export interface PermissionItem {
   id: string;
-  label: string;
-  desc: string;
   icon: ComponentType<{ className?: string }>;
 }

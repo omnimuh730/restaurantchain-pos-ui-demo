@@ -1,6 +1,9 @@
+import { useMemo } from "react";
 import { Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 import { MAIN_CATEGORIES, SUB_CATEGORIES, MENU_ITEMS } from "./data";
+import { menuItemName } from "../../../../i18n/utils";
 
 interface MenuPanelProps {
   selectedMainCategory: string;
@@ -9,22 +12,44 @@ interface MenuPanelProps {
   setSelectedSubCategory: (id: string | null) => void;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
-  addItemToOrder: (item: { id: string; name: string; price: number; currency?: "foreign" | "domestic" }) => void;
+  addItemToOrder: (item: {
+    id: string;
+    price: number;
+    currency?: "foreign" | "domestic";
+    categoryId: string;
+  }) => void;
 }
 
 export function MenuPanel(props: MenuPanelProps) {
   const {
-    selectedMainCategory, setSelectedMainCategory,
-    selectedSubCategory, setSelectedSubCategory,
-    searchQuery, setSearchQuery, addItemToOrder,
+    selectedMainCategory,
+    setSelectedMainCategory,
+    selectedSubCategory,
+    setSelectedSubCategory,
+    searchQuery,
+    setSearchQuery,
+    addItemToOrder,
   } = props;
+  const { t } = useTranslation();
   const tc = useThemeClasses();
 
   const subCategories = SUB_CATEGORIES[selectedMainCategory] || [];
   const allItemsForMain = subCategories.flatMap((sub) => MENU_ITEMS[sub.id] || []);
-  const items = selectedSubCategory ? (MENU_ITEMS[selectedSubCategory] || []) : allItemsForMain;
+  const items = selectedSubCategory ? MENU_ITEMS[selectedSubCategory] || [] : allItemsForMain;
+
+  const itemToSubCategory = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const sub of subCategories) {
+      for (const row of MENU_ITEMS[sub.id] || []) {
+        m.set(row.id, sub.id);
+      }
+    }
+    return m;
+  }, [subCategories]);
+
+  const q = searchQuery.toLowerCase();
   const filteredItems = items.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    menuItemName(t, item.id).toLowerCase().includes(q),
   );
 
   const handleMainCategoryChange = (categoryId: string) => {
@@ -34,7 +59,6 @@ export function MenuPanel(props: MenuPanelProps) {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-      {/* Search Bar */}
       <div className={`px-3 py-1.5 border-b ${tc.border}`}>
         <div className="relative">
           <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${tc.subtext}`} />
@@ -42,13 +66,12 @@ export function MenuPanel(props: MenuPanelProps) {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search"
+            placeholder={t("orders.searchPlaceholder")}
             className={`w-full pl-10 pr-4 py-2 rounded-lg text-[11px] md:text[13px] ${tc.searchInput}`}
           />
         </div>
       </div>
 
-      {/* Main Categories */}
       <div className={`px-3 py-1.5 border-b ${tc.border}`}>
         <div className="grid grid-cols-4 xl:grid-cols-5 gap-1 sm:gap-1.5">
           {MAIN_CATEGORIES.map((cat) => (
@@ -65,13 +88,14 @@ export function MenuPanel(props: MenuPanelProps) {
                     : "bg-slate-200 hover:bg-slate-300 text-slate-700 border-2 border-transparent"}
               `}
             >
-              <span className="leading-tight text-left text-[11px] md:text-[13px]">{cat.label}</span>
+              <span className="leading-tight text-left text-[11px] md:text-[13px]">
+                {t(`categories.main.${cat.id}`)}
+              </span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Sub Categories */}
       {subCategories.length > 0 && (
         <div className={`px-3 py-1.5 border-b ${tc.border}`}>
           <div className="grid grid-cols-4 xl:grid-cols-5 gap-1 sm:gap-1.5">
@@ -89,20 +113,28 @@ export function MenuPanel(props: MenuPanelProps) {
                       : "bg-slate-100 hover:bg-slate-200 text-slate-600 border-2 border-transparent"}
                 `}
               >
-                <span className="leading-tight text-left text-[11px] md:text-[13px]">{sub.label}</span>
+                <span className="leading-tight text-left text-[11px] md:text-[13px]">
+                  {t(`categories.sub.${sub.id}`)}
+                </span>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Menu Items Grid */}
       <div className="flex-1 overflow-y-auto px-3 py-1.5 min-h-[5.5rem]">
         <div className="grid grid-cols-4 xl:grid-cols-5 gap-1 sm:gap-1.5">
           {filteredItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => addItemToOrder(item)}
+              onClick={() =>
+                addItemToOrder({
+                  id: item.id,
+                  price: item.price,
+                  currency: item.currency,
+                  categoryId: itemToSubCategory.get(item.id) ?? selectedSubCategory ?? "unknown",
+                })
+              }
               className={`
                 h-10 sm:h-14 rounded transition-all text-[0.6875rem] sm:text-[0.8125rem]
                 flex items-end justify-start px-1.5 sm:px-2.5 pb-1 sm:pb-1.5 cursor-pointer
@@ -111,7 +143,9 @@ export function MenuPanel(props: MenuPanelProps) {
                   : "bg-slate-200/80 hover:bg-slate-300 text-slate-800 border-2 border-transparent hover:border-blue-400"}
               `}
             >
-              <span className="leading-tight text-left text-[11px] md:text-[13px]">{item.name}</span>
+              <span className="leading-tight text-left text-[11px] md:text-[13px]">
+                {menuItemName(t, item.id)}
+              </span>
             </button>
           ))}
         </div>
