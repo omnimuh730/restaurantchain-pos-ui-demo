@@ -1,0 +1,95 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import 'tw-animate-css';
+@import './theme.css';
+
+/* Canvas scrollbars (floor plan view + edit mode) */
+.edit-canvas-scrollbar {
+  overflow: scroll !important;
+}
+.edit-canvas-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.edit-canvas-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+}
+.edit-canvas-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.edit-canvas-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.35);
+  background-clip: content-box;
+}
+.edit-canvas-scrollbar::-webkit-scrollbar-corner {
+  background: rgba(0, 0, 0, 0.03);
+}
+.edit-canvas-scrollbar-dark::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+.edit-canvas-scrollbar-dark::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25) !important;
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box !important;
+}
+.edit-canvas-scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45) !important;
+  background-clip: content-box !important;
+}
+.edit-canvas-scrollbar-dark::-webkit-scrollbar-corner {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.2s ease-out;
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* App-wide scrollbar style — matches floor plan hall view */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.35);
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-corner {
+  background: rgba(0, 0, 0, 0.03);
+}
+.dark *::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+.dark *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  background-clip: content-box;
+}
+.dark *::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
+  background-clip: content-box;
+}
+.dark *::-webkit-scrollbar-corner {
+  background: rgba(255, 255, 255, 0.05);
+}
+html { scrollbar-color: rgba(0, 0, 0, 0.18) rgba(0, 0, 0, 0.03); }
+html.dark, .dark { scrollbar-color: rgba(255, 255, 255, 0.25) rgba(255, 255, 255, 0.05); }
+.no-scrollbar::-webkit-scrollbar { display: none !important; }
