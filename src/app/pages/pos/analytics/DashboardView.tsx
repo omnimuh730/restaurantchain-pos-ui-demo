@@ -478,8 +478,8 @@ export function DashboardView() {
               </ResponsiveContainer>
             </div>
           </div>
-
-          <div className={`${tc.card} rounded-xl p-4 sm:p-5 flex-1 min-h-[320px] flex flex-col`}>
+          <div className="space-y-4 pb-4">
+            <div className={`${tc.card} rounded-xl p-4 sm:p-5 flex flex-col`}>
             <p className={`text-[1rem] ${tc.heading} mb-1`}>
               <Trans
                 ns="analytics"
@@ -489,7 +489,7 @@ export function DashboardView() {
               />
             </p>
             <p className={`text-[0.875rem] ${tc.subtext} mb-4`}>{t("dashboard.barOverTime")}</p>
-            <div className="flex-1 min-h-[140px]">
+            <div className="w-full h-[220px] sm:h-[260px] shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={coloredChartData}>
                   <CartesianGrid key="grid" strokeDasharray="3 3" stroke={tc.gridStroke} vertical={false} />
@@ -518,7 +518,9 @@ export function DashboardView() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
+            </div>
+          </div>  
+
         </div>
       </AnimatedContent>
     </div>
