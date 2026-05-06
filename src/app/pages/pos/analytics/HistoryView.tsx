@@ -188,7 +188,7 @@ export function HistoryView() {
   const replacementForNoShow = selected?.kind === "no-show" ? EVENTS.find((e) => e.linkedToId === selected.id) : null;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-3">
+    <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
       {/* Filter bar */}
       <div className={`${tc.card} rounded-xl p-3 sm:p-4`}>
         <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
@@ -274,10 +274,10 @@ export function HistoryView() {
       </div>
 
       {/* Split layout (mobile: detail becomes full-screen sheet) */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[1fr_360px] gap-3">
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[1fr_360px] gap-3 overflow-hidden">
         {/* List / Receipts column */}
         <div className={`${tc.card} rounded-xl flex flex-col min-h-0 overflow-hidden`}>
-          <div className={`px-3 sm:px-4 py-2.5 border-b ${tc.cardBorder} flex items-center justify-between gap-2`}>
+          <div className={`shrink-0 px-3 sm:px-4 py-2.5 border-b ${tc.cardBorder} flex items-center justify-between gap-2`}>
             <span className={`text-[0.75rem] ${tc.subtext}`}>
               {t("history.showingResults", { count: filtered.length })}
               {isSearching && (
@@ -312,7 +312,7 @@ export function HistoryView() {
               </button>
             </div>
           </div>
-          <div className={`flex-1 overflow-y-auto ${effectiveView === "receipts" ? "p-3 sm:p-4 space-y-3" : ""}`}>
+          <div className={`flex-1 min-h-0 overflow-y-auto ${effectiveView === "receipts" ? "p-3 sm:p-4 space-y-3" : ""}`}>
             {filtered.length === 0 ? (
               <div className={`p-10 text-center text-[0.875rem] ${tc.muted}`}>{t("history.noMatch")}</div>
             ) : effectiveView === "receipts" ? (
@@ -375,7 +375,7 @@ export function HistoryView() {
         </div>
 
         {/* Detail pane (desktop) */}
-        <div className={`hidden md:flex ${tc.card} rounded-xl flex-col min-h-0 overflow-hidden`}>
+        <div className={`hidden md:flex ${tc.card} rounded-xl flex-col min-h-0 max-h-full overflow-hidden`}>
           {!selected ? (
             <div className={`p-10 text-center text-[0.875rem] ${tc.muted}`}>{t("history.selectEvent")}</div>
           ) : (
@@ -559,7 +559,7 @@ function DetailPane({ event, linkedEvent, replacement, tcIsDark }: DetailPanePro
 
   return (
     <>
-      <div className={`px-4 py-3 border-b ${tc.cardBorder} flex items-center gap-3`}>
+      <div className={`shrink-0 px-4 py-3 border-b ${tc.cardBorder} flex items-center gap-3`}>
         <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${accent}`}>
           <Icon className="w-4.5 h-4.5" />
         </div>
@@ -572,7 +572,7 @@ function DetailPane({ event, linkedEvent, replacement, tcIsDark }: DetailPanePro
         <span className={`text-[0.6875rem] px-2 py-0.5 rounded ${badge.cls}`}>{badge.label}</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         <div className="grid grid-cols-2 gap-2">
           <DetailRow icon={MapPin} label={t("history.detail.table")} value={tableLabel(t, event)} />
           {event.partySize != null && (
