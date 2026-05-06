@@ -153,7 +153,7 @@ export function MenuAnalysisView() {
 
   if (poolItems.length === 0) {
     return (
-      <div className="space-y-4 pb-4">
+      <div className="space-y-4">
         <DateFilterBar period={period} setPeriod={setPeriod} title={t("titles.menuAnalysis")} />
         <div className={`${tc.card} rounded-xl p-10 text-center ${tc.muted} text-[0.875rem]`}>
           {t("menuAnalysis.noItemsSold", {
@@ -165,7 +165,7 @@ export function MenuAnalysisView() {
   }
 
   return (
-    <div className="space-y-4 pb-4">
+    <div className="space-y-4">
       <DateFilterBar period={period} setPeriod={setPeriod} title={t("titles.menuAnalysis")} />
 
       <AnimatedContent animationKey={`${period}-${activeCur}`} className="space-y-4">

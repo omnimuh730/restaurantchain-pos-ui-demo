@@ -85,7 +85,7 @@ export default function Analytics() {
           <h1 className={`text-[1.125rem] ${tc.heading}`}>{sectionTitle[activeSection]}</h1>
         </div>
 
-        <div className="p-4 sm:p-5 flex-1 flex flex-col min-h-0" style={{ zoom: scale }}>
+        <div className="p-4 sm:p-5 flex-1 flex flex-col" style={{ zoom: scale }}>
           <ActiveView />
         </div>
       </div>
