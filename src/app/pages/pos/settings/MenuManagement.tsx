@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { UtensilsCrossed, Plus, X, Edit3, Search, AlertTriangle, Check, Eye, EyeOff, Receipt, Tag } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { UtensilsCrossed, Plus, X, Search, AlertTriangle, Check, Eye, EyeOff, Trash2 } from "lucide-react";
 import { useThemeClasses } from "../theme-context";
 import { InlineModal } from "./ui-helpers";
 import { INITIAL_MENU_CATEGORIES } from "./data";
@@ -123,6 +123,10 @@ export function MenuManagement() {
  if (!deleteConfirm) return;
  const { id } = deleteConfirm;
  setCategories((prev) => prev.map((c) => ({ ...c, subCategories: c.subCategories.map((s) => ({ ...s, items: s.items.filter((item) => item.id !== id) })) })));
+ if (editItem?.id === id) {
+ setEditItem(null);
+ resetForm();
+ }
  setDeleteConfirm(null);
  };
 
@@ -160,11 +164,30 @@ export function MenuManagement() {
  : "bg-slate-100 hover:bg-slate-200 text-slate-600 border-transparent"
  }`;
 
- const itemTileCls = `rounded-lg transition-all text-[0.8125rem] flex flex-col justify-end px-2.5 pb-2 pt-3 cursor-pointer border-2 min-h-[3.5rem] ${
+ const itemTileCls = `rounded-lg text-[0.8125rem] flex flex-col justify-end px-2.5 pb-2 pt-3 border-2 min-h-[3.5rem] w-full text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
  tc.isDark
- ? "bg-slate-600/70 hover:bg-slate-500/80 text-slate-100 border-transparent hover:border-blue-400"
- : "bg-slate-200/80 hover:bg-slate-300 text-slate-800 border-transparent hover:border-blue-400"
+ ? "bg-slate-600/70 text-slate-100 border-transparent"
+ : "bg-slate-200/80 text-slate-800 border-transparent"
  }`;
+
+ const liveEditItem = useMemo(() => {
+ if (!editItem) return null;
+ for (const c of categories) {
+ for (const s of c.subCategories) {
+ const found = s.items.find((i) => i.id === editItem.id);
+ if (found) return found;
+ }
+ }
+ return null;
+ }, [categories, editItem]);
+
+ useEffect(() => {
+ if (editItem && liveEditItem === null) {
+ setEditItem(null);
+ setFormName("");
+ setFormPrice("");
+ }
+ }, [editItem, liveEditItem]);
 
  const modalBtnRow = (onCancel: () => void, onConfirm: () => void, label: string, disabled = false) => (
  <div className={`p-5 border-t ${tc.cardBorder} flex justify-end gap-2`}>
@@ -245,26 +268,18 @@ export function MenuManagement() {
  {filteredItems.map((item) => {
  const isInactive = item.active === false;
  return (
- <div key={item.id} className="relative group">
- <div className={`${itemTileCls} ${isInactive ? "opacity-50 grayscale" : ""}`}>
+ <button
+ key={item.id}
+ type="button"
+ onClick={() => openEditItem(item)}
+ className={`relative ${itemTileCls} ${isInactive ? "opacity-50 grayscale" : ""}`}
+ >
  <p className="leading-tight">{item.name}</p>
  <p className={`text-[0.75rem] mt-0.5 ${tc.isDark ? "text-slate-400" : "text-slate-500"}`}>{item.currency === "domestic" ? `₩${Math.round(item.price).toLocaleString()}` : `$${item.price.toFixed(2)}`}</p>
  {isInactive && (
  <span className="absolute bottom-1 left-1.5 px-1.5 py-0.5 rounded bg-slate-600 text-white text-[0.5625rem]">Inactive</span>
  )}
- </div>
- <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
- <button
- onClick={() => toggleItemActive(item.id)}
- className={`w-5 h-5 rounded bg-black/60 flex items-center justify-center cursor-pointer ${isInactive ? "text-blue-400 hover:text-blue-300" : "text-gray-300 hover:text-amber-400"}`}
- title={isInactive ? "Activate" : "Deactivate"}
- >
- {isInactive ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
  </button>
- <button onClick={() => openEditItem(item)} className="w-5 h-5 rounded bg-black/60 text-gray-300 hover:text-blue-400 flex items-center justify-center cursor-pointer"><Edit3 className="w-3 h-3" /></button>
- <button onClick={() => setDeleteConfirm({ id: item.id, name: item.name })} className="w-5 h-5 rounded bg-black/60 text-gray-300 hover:text-red-400 flex items-center justify-center cursor-pointer"><X className="w-3 h-3" /></button>
- </div>
- </div>
  );
  })}
  </div>
@@ -395,6 +410,42 @@ export function MenuManagement() {
  />
  </div>
  </div>
+ {liveEditItem && (
+ <div className={`pt-4 border-t ${tc.cardBorder} space-y-2`}>
+ <button
+ type="button"
+ onClick={() => editItem && toggleItemActive(editItem.id)}
+ className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[0.8125rem] cursor-pointer transition-colors ${tc.btnSecondary}`}
+ >
+ {liveEditItem.active === false ? (
+ <>
+ <Eye className="w-4 h-4 shrink-0" />
+ Show on menu
+ </>
+ ) : (
+ <>
+ <EyeOff className="w-4 h-4 shrink-0" />
+ Hide from menu
+ </>
+ )}
+ </button>
+ <button
+ type="button"
+ onClick={() => {
+ if (!editItem) return;
+ setDeleteConfirm({ id: editItem.id, name: formName.trim() || editItem.name });
+ setEditItem(null);
+ resetForm();
+ }}
+ className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-[0.8125rem] cursor-pointer transition-colors ${
+ tc.isDark ? "bg-red-500/15 text-red-400 hover:bg-red-500/25" : "bg-red-50 text-red-600 hover:bg-red-100"
+ }`}
+ >
+ <Trash2 className="w-4 h-4 shrink-0" />
+ Delete item
+ </button>
+ </div>
+ )}
  </div>
  {modalBtnRow(() => { setEditItem(null); resetForm(); }, updateItem, "Save Changes")}
  </InlineModal>
