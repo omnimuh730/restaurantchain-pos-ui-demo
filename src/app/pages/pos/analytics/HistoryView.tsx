@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import {
   Search, Receipt, Calendar, CreditCard, UserX, UserPlus, X,
   Clock, Users, MapPin, Banknote, Hash, ArrowLeft, List, FileText,
@@ -18,6 +18,7 @@ import {
   type EventStatus,
 } from "./historyMockData";
 import { guestLabel, tableLabel, itemLabel, paymentLabel, noteLabel } from "./historyLabels";
+import { POS_OVERLAY_BACKDROP, POS_OVERLAY_SHEET_BOTTOM } from "../posOverlayLayers";
 
 const EVENTS = HISTORY_EVENTS;
 
@@ -186,6 +187,16 @@ export function HistoryView() {
   const selected = useMemo(() => filtered.find((e) => e.id === selectedId) ?? filtered[0] ?? null, [filtered, selectedId]);
   const linkedEvent = selected?.linkedToId ? EVENTS.find((e) => e.id === selected.linkedToId) : null;
   const replacementForNoShow = selected?.kind === "no-show" ? EVENTS.find((e) => e.linkedToId === selected.id) : null;
+
+  const mobileDetailOpen = Boolean(selected && selectedId);
+  const [detailAnimIn, setDetailAnimIn] = useState(false);
+  useEffect(() => {
+    if (mobileDetailOpen) {
+      requestAnimationFrame(() => requestAnimationFrame(() => setDetailAnimIn(true)));
+    } else {
+      setDetailAnimIn(false);
+    }
+  }, [mobileDetailOpen]);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
@@ -384,17 +395,25 @@ export function HistoryView() {
         </div>
       </div>
 
-      {/* Mobile detail sheet — bottom anchored, dynamic height, max 75vh */}
+      {/* Mobile detail sheet — slides up from bottom; behind POS chrome (z-50) */}
       {selected && selectedId && (
-        <div className="md:hidden fixed inset-0 z-50">
+        <div className="md:hidden">
           <div
-            className="absolute inset-0"
-            style={{ background: tc.isDark ? "rgba(15,23,42,0.6)" : "rgba(15,23,42,0.45)" }}
+            className={POS_OVERLAY_BACKDROP}
+            style={{
+              background: tc.isDark ? "rgba(15,23,42,0.6)" : "rgba(15,23,42,0.45)",
+              opacity: detailAnimIn ? 1 : 0,
+              pointerEvents: detailAnimIn ? "auto" : "none",
+            }}
             onClick={() => setSelectedId(null)}
           />
           <div
-            className={`absolute left-0 right-0 bottom-0 ${tc.card} rounded-t-2xl overflow-hidden flex flex-col shadow-2xl`}
-            style={{ maxHeight: "75vh" }}
+            className={`${POS_OVERLAY_SHEET_BOTTOM} rounded-t-2xl overflow-hidden flex flex-col shadow-2xl pb-20 ${tc.card}`}
+            style={{
+              maxHeight: "min(75vh, calc(100dvh - 4rem))",
+              transform: detailAnimIn ? "translateY(0)" : "translateY(100%)",
+              pointerEvents: detailAnimIn ? "auto" : "none",
+            }}
           >
             <div className={`flex items-center gap-2 px-3 py-2 border-b ${tc.cardBorder} shrink-0`}>
               <button onClick={() => setSelectedId(null)} className={`p-1.5 rounded cursor-pointer ${tc.hover}`} aria-label={t("history.back")}>

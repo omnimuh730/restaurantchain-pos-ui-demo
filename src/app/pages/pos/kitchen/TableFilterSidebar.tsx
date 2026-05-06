@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronRight, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export const KITCHEN_FLOORS = [
   {
@@ -207,6 +207,15 @@ function FilterContent({ selectedTables, setSelectedTables }: Pick<TableFilterSi
 export function TableFilterSidebar({ selectedTables, setSelectedTables, open, onClose }: TableFilterSidebarProps) {
   const tc = useThemeClasses();
   const { t } = useTranslation("kitchen");
+  const [panelIn, setPanelIn] = useState(false);
+  useEffect(() => {
+    if (!open) {
+      setPanelIn(false);
+      return;
+    }
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => setPanelIn(true)));
+    return () => cancelAnimationFrame(id);
+  }, [open]);
 
   return (
     <>
@@ -218,9 +227,12 @@ export function TableFilterSidebar({ selectedTables, setSelectedTables, open, on
       </div>
 
       {open && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-          <div className={`relative w-72 max-w-[80vw] ${tc.raised} flex flex-col h-full shadow-xl animate-slide-in-left`}>
+        <>
+          <div className="md:hidden fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ease-out" onClick={onClose} />
+          <div
+            className={`md:hidden fixed top-16 left-0 bottom-0 z-[45] w-72 max-w-[80vw] ${tc.raised} flex flex-col shadow-xl transition-transform duration-300 ease-out pb-20`}
+            style={{ transform: panelIn ? "translateX(0)" : "translateX(-100%)" }}
+          >
             <div className={`px-4 py-3 border-b ${tc.border} flex items-center justify-between`}>
               <span className={`text-[0.8125rem] ${tc.heading}`}>{t("tables.my_tables")}</span>
               <button onClick={onClose} className={`p-1.5 rounded-lg cursor-pointer ${tc.hover} ${tc.subtext}`}>
@@ -229,7 +241,7 @@ export function TableFilterSidebar({ selectedTables, setSelectedTables, open, on
             </div>
             <FilterContent selectedTables={selectedTables} setSelectedTables={setSelectedTables} />
           </div>
-        </div>
+        </>
       )}
     </>
   );

@@ -235,16 +235,32 @@ export function CalendarView({ floors, reservations, setReservations }: Calendar
 
       {/* Mobile drawer */}
       {s.isMobile && (
-        <div className="fixed inset-0 z-50" style={{ pointerEvents: s.calPanelOpen ? "auto" : "none" }}>
-          <div className="absolute inset-0 transition-opacity duration-300" style={{ background: "rgba(0,0,0,0.5)", opacity: s.calPanelOpen ? 1 : 0 }} onClick={() => s.setCalPanelOpen(false)} />
-          <div className="absolute top-0 left-0 bottom-0 w-[85vw] max-w-[320px] flex flex-col overflow-hidden transition-transform duration-300 ease-out" style={{ background: C.card, borderRight: `1px solid ${C.border}`, transform: s.calPanelOpen ? "translateX(0)" : "translateX(-100%)" }}>
+        <>
+          <div
+            className="fixed inset-0 z-40 transition-opacity duration-300 ease-out"
+            style={{
+              background: "rgba(0,0,0,0.5)",
+              opacity: s.calPanelOpen ? 1 : 0,
+              pointerEvents: s.calPanelOpen ? "auto" : "none",
+            }}
+            onClick={() => s.setCalPanelOpen(false)}
+          />
+          <div
+            className="fixed top-16 left-0 bottom-0 z-[45] w-[85vw] max-w-[320px] flex flex-col overflow-hidden transition-transform duration-300 ease-out pb-20"
+            style={{
+              background: C.card,
+              borderRight: `1px solid ${C.border}`,
+              transform: s.calPanelOpen ? "translateX(0)" : "translateX(-100%)",
+              pointerEvents: s.calPanelOpen ? "auto" : "none",
+            }}
+          >
             <div className="flex items-center justify-between px-4 py-3 flex-shrink-0" style={{ borderBottom: `1px solid ${C.border}` }}>
               <span className="text-sm font-semibold" style={{ color: C.text1 }}>Reservations</span>
               <button onClick={() => s.setCalPanelOpen(false)} className="p-1 rounded cursor-pointer hover:opacity-80" style={{ color: C.text3 }}><X size={16} /></button>
             </div>
             <CalendarPanel {...panelProps} />
           </div>
-        </div>
+        </>
       )}
     </div>
   );

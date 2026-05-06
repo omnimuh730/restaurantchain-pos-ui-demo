@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect, lazy, Suspense, startTransition } from "react";
 import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
+import { POS_OVERLAY_BACKDROP } from "../posOverlayLayers";
 import { INITIAL_TABLE_ORDERS, TABLES } from "./data";
 import type { OrderItem } from "./data";
 import { OrderPanel } from "./OrderPanel";
@@ -234,16 +235,16 @@ export default function Orders() {
         <div
           aria-hidden="true"
           onClick={() => startTransition(() => setPayOpen(false))}
-          className={`absolute inset-0 z-20 transition-opacity duration-300 ${
+          className={`${POS_OVERLAY_BACKDROP} bg-black/40 sm:absolute sm:inset-0 sm:top-0 sm:z-20 sm:transition-opacity ${
             payAnim ? "opacity-100" : "opacity-0"
-          } bg-black/40`}
+          }`}
         />
       )}
       {payMounted && (
         <div
-          className={`fixed top-16 left-0 right-0 bottom-0 z-30 sm:absolute sm:top-0 sm:bottom-0 sm:left-1/2 md:left-96 xl:left-[28rem] sm:right-0 transform transition-transform duration-300 ease-out ${
+          className={`fixed top-16 left-0 right-0 bottom-0 z-[45] sm:absolute sm:top-0 sm:bottom-0 sm:left-1/2 md:left-96 xl:left-[28rem] sm:right-0 sm:z-30 transform transition-transform duration-300 ease-out ${
             payAnim ? "translate-y-0 sm:translate-x-0" : "translate-y-full sm:translate-y-0 sm:translate-x-full"
-          } ${tc.isDark ? "bg-[#1e2330]" : "bg-white"} shadow-2xl`}
+          } ${tc.isDark ? "bg-[#1e2330]" : "bg-white"} shadow-2xl pb-20 sm:pb-0`}
         >
           <Suspense fallback={<div className="p-6 text-sm">Loading…</div>}>
             <PaymentPage

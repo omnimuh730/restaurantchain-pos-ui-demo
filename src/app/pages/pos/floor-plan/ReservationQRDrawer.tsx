@@ -6,6 +6,7 @@ import type { Reservation, Table } from "./types";
 import {
   estimateDuration, getStartHour, getCurrentEndHour, getBlockVisualState,
 } from "./reservationLogic";
+import { POS_OVERLAY_BACKDROP, POS_OVERLAY_SHEET_BOTTOM } from "../posOverlayLayers";
 
 interface ReservationQRDrawerProps {
   reservation: Reservation | null;
@@ -137,31 +138,57 @@ export function ReservationQRDrawer({ reservation, table, onClose, nowHour = 0, 
 
   if (isMobile) {
     return (
-      <div className="fixed inset-0 z-[60]" style={{ pointerEvents: visible ? "auto" : "none" }}>
-        <div className="absolute inset-0 transition-opacity duration-300" style={{ background: "rgba(0,0,0,0.5)", opacity: visible ? 1 : 0 }} onClick={onClose} />
+      <>
         <div
-          className="absolute left-0 right-0 bottom-0 rounded-t-2xl overflow-hidden transition-transform duration-300 ease-out flex flex-col"
-          style={{ background: C.card, maxHeight: "85vh", transform: visible ? "translateY(0)" : "translateY(100%)" }}
+          className={POS_OVERLAY_BACKDROP}
+          style={{
+            background: "rgba(0,0,0,0.5)",
+            opacity: visible ? 1 : 0,
+            pointerEvents: visible ? "auto" : "none",
+          }}
+          onClick={onClose}
+        />
+        <div
+          className={`${POS_OVERLAY_SHEET_BOTTOM} rounded-t-2xl overflow-hidden flex flex-col pointer-events-auto shadow-2xl pb-20`}
+          style={{
+            background: C.card,
+            maxHeight: "min(85vh, calc(100dvh - 4rem))",
+            transform: visible ? "translateY(0)" : "translateY(100%)",
+            pointerEvents: visible ? "auto" : "none",
+          }}
         >
           <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
             <div className="w-10 h-1 rounded-full" style={{ background: C.text3 }} />
           </div>
           {body}
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-[60]" style={{ pointerEvents: visible ? "auto" : "none" }}>
-      <div className="absolute inset-0 transition-opacity duration-300" style={{ background: "rgba(0,0,0,0.4)", opacity: visible ? 1 : 0 }} onClick={onClose} />
+    <>
       <div
-        className="absolute top-0 right-0 bottom-0 w-[360px] border-l overflow-hidden transition-transform duration-300 ease-out flex flex-col"
-        style={{ background: C.card, borderColor: C.border, transform: visible ? "translateX(0)" : "translateX(100%)" }}
+        className="fixed inset-0 z-40 transition-opacity duration-300 ease-out"
+        style={{
+          background: "rgba(0,0,0,0.4)",
+          opacity: visible ? 1 : 0,
+          pointerEvents: visible ? "auto" : "none",
+        }}
+        onClick={onClose}
+      />
+      <div
+        className="fixed top-16 right-0 bottom-20 w-[360px] max-w-[100vw] z-[60] border-l overflow-hidden flex flex-col pointer-events-auto transition-transform duration-300 ease-out"
+        style={{
+          background: C.card,
+          borderColor: C.border,
+          transform: visible ? "translateX(0)" : "translateX(100%)",
+          pointerEvents: visible ? "auto" : "none",
+        }}
       >
         {body}
       </div>
-    </div>
+    </>
   );
 }
 

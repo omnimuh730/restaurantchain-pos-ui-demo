@@ -10,6 +10,7 @@ import { useTheme, useThemeClasses } from "../theme-context";
 import { useColors } from "./useColors";
 import type { Floor } from "./types";
 import { formatFloorDisplayName } from "./floorI18n";
+import { POS_OVERLAY_BACKDROP } from "../posOverlayLayers";
 
 export function FloorTabsRow({
   floors,
@@ -349,6 +350,19 @@ function ModalShell({
   children: React.ReactNode;
   onClose: () => void;
 }) {
+  const [entered, setEntered] = useState(false);
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px)");
+    const sync = () => setDesktop(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => setEntered(true)));
+    return () => cancelAnimationFrame(id);
+  }, []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -356,13 +370,44 @@ function ModalShell({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  if (desktop) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-300 ease-out"
+        style={{ background: "rgba(0,0,0,0.5)", opacity: entered ? 1 : 0 }}
+        onClick={onClose}
+      >
+        <div
+          className="transition-all duration-300 ease-out"
+          style={{
+            opacity: entered ? 1 : 0,
+            transform: entered ? "scale(1)" : "scale(0.96)",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.5)" }}
-      onClick={onClose}
-    >
-      {children}
-    </div>
+    <>
+      <div
+        className={POS_OVERLAY_BACKDROP}
+        style={{ background: "rgba(0,0,0,0.5)", opacity: entered ? 1 : 0 }}
+        onClick={onClose}
+      />
+      <div className="fixed inset-0 z-[45] flex items-end justify-center pointer-events-none">
+        <div
+          className="pointer-events-auto w-full max-h-[90vh] overflow-y-auto rounded-t-2xl transition-transform duration-300 ease-out pb-20"
+          style={{ transform: entered ? "translateY(0)" : "translateY(100%)" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {children}
+        </div>
+      </div>
+    </>
   );
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, lazy, Suspense, startTransition } from "react";
 import { CalendarRange, LayoutGrid, TableProperties } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useColors, useIsMobile } from "./useColors";
@@ -10,7 +10,11 @@ import { FloorTabsRow } from "./FloorTabsRow";
 import { FloorCanvas } from "./FloorCanvas";
 import { EditMode } from "./EditMode";
 import { TableCardView } from "./TableCardView";
-import { TableDrawer } from "./TableDrawer";
+import { TableDrawer, type FloorPlanPayRequest } from "./TableDrawer";
+import { useThemeClasses } from "../theme-context";
+import { POS_OVERLAY_BACKDROP } from "../posOverlayLayers";
+
+const PaymentPage = lazy(() => import("../payment"));
 import { CalendarView } from "./CalendarView";
 import { useNavBadges } from "../NavBadgeContext";
 
@@ -19,6 +23,22 @@ export default function FloorPlan() {
   const C = useColors();
   const { isDark, role } = useTheme();
   const isMobile = useIsMobile();
+  const tc = useThemeClasses();
+  const [payDetails, setPayDetails] = useState<FloorPlanPayRequest | null>(null);
+  const [payOpen, setPayOpen] = useState(false);
+  const [payMounted, setPayMounted] = useState(false);
+  const [payAnim, setPayAnim] = useState(false);
+
+  useEffect(() => {
+    if (payOpen) {
+      setPayMounted(true);
+      const id = requestAnimationFrame(() => setPayAnim(true));
+      return () => cancelAnimationFrame(id);
+    }
+    setPayAnim(false);
+    const t = setTimeout(() => setPayMounted(false), 300);
+    return () => clearTimeout(t);
+  }, [payOpen]);
   const [viewMode, setViewMode] = useState<ViewMode>("floor");
   const [floors, setFloors] = useState<Floor[]>(INITIAL_FLOORS);
   const [activeFloorId, setActiveFloorId] = useState("f1");
@@ -185,7 +205,7 @@ export default function FloorPlan() {
   }
 
   return (
-    <div className="h-full flex flex-col" style={{ background: C.bg }}>
+    <div className="h-full flex flex-col relative" style={{ background: C.bg }}>
       {/* Header: view mode tabs + edit layout */}
       <div className={`grid grid-cols-3 items-center gap-2 px-4 py-3 border-b ${isDark ? "border-gray-700 bg-[#1e2330]" : "border-slate-300 bg-white"}`}>
         <div />
@@ -232,7 +252,39 @@ export default function FloorPlan() {
           table={sel ?? null}
           onClose={() => setSelectedTable(null)}
           isMobile={isMobile}
+          onRequestPay={(d) => {
+            setPayDetails(d);
+            startTransition(() => setPayOpen(true));
+          }}
         />
+      )}
+
+      {payMounted && (
+        <div
+          aria-hidden="true"
+          onClick={() => startTransition(() => setPayOpen(false))}
+          className={`${POS_OVERLAY_BACKDROP} bg-black/40 sm:absolute sm:inset-0 sm:top-0 sm:z-20 sm:transition-opacity ${
+            payAnim ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      )}
+      {payMounted && payDetails && (
+        <div
+          className={`fixed top-16 left-0 right-0 bottom-0 z-[45] sm:absolute sm:top-0 sm:bottom-0 sm:left-1/2 md:left-96 xl:left-[28rem] sm:right-0 sm:z-30 transform transition-transform duration-300 ease-out ${
+            payAnim ? "translate-y-0 sm:translate-x-0" : "translate-y-full sm:translate-y-0 sm:translate-x-full"
+          } ${tc.isDark ? "bg-[#1e2330]" : "bg-white"} shadow-2xl pb-20 sm:pb-0`}
+        >
+          <Suspense fallback={<div className="p-6 text-sm">Loading…</div>}>
+            <PaymentPage
+              embedded
+              totalUsd={payDetails.totalUsd}
+              totalKrw={payDetails.totalKrw}
+              checkNumber={payDetails.checkNumber}
+              tableLabel={payDetails.tableLabel}
+              onClose={() => startTransition(() => setPayOpen(false))}
+            />
+          </Suspense>
+        </div>
       )}
     </div>
   );

@@ -286,7 +286,7 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
 
   return (
     <div className={`h-full overflow-y-auto ${tc.page}`}>
-      <div className="max-w-3xl mx-auto p-4 sm:p-6 pb-24 sm:pb-24 md:pb-6 min-h-full flex flex-col">
+      <div className="max-w-3xl mx-auto p-4 sm:p-6 min-h-full flex flex-col">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           <button
@@ -562,8 +562,8 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
         )}
       </div>
       {processingStep !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className={`w-full max-w-sm mx-4 rounded-2xl p-6 ${tc.isDark ? "bg-slate-800 border border-slate-700" : "bg-white border border-slate-200"} shadow-xl`}>
+        <div className="fixed inset-0 z-40 sm:z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4 transition-opacity duration-300 ease-out">
+          <div className={`w-full max-w-sm sm:mx-4 rounded-t-2xl sm:rounded-2xl p-6 pb-24 sm:pb-6 ${tc.isDark ? "bg-slate-800 border border-slate-700" : "bg-white border border-slate-200"} shadow-xl`}>
             <div className="flex items-center gap-3 mb-4">
               {failure && processingStep === failure.idx ? (
                 <div className="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center">

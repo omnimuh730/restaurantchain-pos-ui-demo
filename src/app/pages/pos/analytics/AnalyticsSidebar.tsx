@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { BarChart3, UtensilsCrossed, Users, Settings2, History } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
+import { POS_OVERLAY_BACKDROP, POS_OVERLAY_SHEET_LEFT } from "../posOverlayLayers";
 
 export type AnalyticsSection = "dashboard" | "menu-analysis" | "customer-analysis" | "history";
 
@@ -14,6 +16,14 @@ interface AnalyticsSidebarProps {
 export function AnalyticsSidebar({ active, onSelect, isMobileOpen, onMobileClose }: AnalyticsSidebarProps) {
   const { t } = useTranslation("analytics");
   const tc = useThemeClasses();
+  const [drawerIn, setDrawerIn] = useState(false);
+  useEffect(() => {
+    if (isMobileOpen) {
+      requestAnimationFrame(() => requestAnimationFrame(() => setDrawerIn(true)));
+    } else {
+      setDrawerIn(false);
+    }
+  }, [isMobileOpen]);
 
   const sections: { id: AnalyticsSection; labelKey: string; icon: typeof BarChart3 }[] = [
     { id: "dashboard", labelKey: "sidebar.dashboard", icon: BarChart3 },
@@ -62,12 +72,16 @@ export function AnalyticsSidebar({ active, onSelect, isMobileOpen, onMobileClose
 
       {isMobileOpen && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-40 sm:hidden" onClick={onMobileClose} />
           <div
-            className={`fixed top-0 left-0 bottom-0 w-[260px] z-50 sm:hidden shadow-xl ${
+            className={`${POS_OVERLAY_BACKDROP} bg-black/50 sm:hidden`}
+            style={{ opacity: drawerIn ? 1 : 0 }}
+            onClick={onMobileClose}
+          />
+          <div
+            className={`${POS_OVERLAY_SHEET_LEFT} w-[260px] sm:hidden shadow-xl pb-20 ${
               tc.isDark ? "bg-[#141820]" : "bg-white"
             }`}
-            style={{ animation: "slide-in-left 0.25s ease-out" }}
+            style={{ transform: drawerIn ? "translateX(0)" : "translateX(-100%)" }}
           >
             {sidebar}
           </div>

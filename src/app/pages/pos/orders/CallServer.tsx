@@ -69,23 +69,23 @@ export function CallServerButton() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center"
+            className="fixed inset-0 z-40 sm:z-[70] flex items-end sm:items-center justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 transition-opacity duration-300 ease-out"
               style={{ background: tc.isDark ? "rgba(8,12,20,0.6)" : "rgba(15,23,42,0.45)" }}
               onClick={() => setOpen(false)}
             />
             <motion.div
-              initial={{ y: 40, opacity: 0 }}
+              initial={{ y: "100%", opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 40, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 320, damping: 30 }}
-              className={`relative w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl ${tc.card} overflow-hidden shadow-2xl flex flex-col`}
-              style={{ maxHeight: "75vh" }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", stiffness: 320, damping: 32 }}
+              className={`relative z-[45] w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl ${tc.card} overflow-hidden shadow-2xl flex flex-col pb-20 sm:pb-0`}
+              style={{ maxHeight: "min(75vh, calc(100dvh - 4rem))" }}
             >
               <div className={`flex items-center gap-2 px-4 py-3 border-b ${tc.cardBorder} shrink-0`}>
                 <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center">

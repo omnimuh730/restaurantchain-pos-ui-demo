@@ -8,8 +8,27 @@ import type { Table } from "./types";
 import { OrderItemsTable } from "../components/OrderItemsTable";
 import { formatTableLabel } from "./floorI18n";
 import { formatDomesticWon } from "../../../../i18n/formatMoney";
+import { POS_OVERLAY_BACKDROP, POS_OVERLAY_SHEET_BOTTOM } from "../posOverlayLayers";
 
-export function TableDrawer({ table, onClose, isMobile }: { table: Table | null; onClose: () => void; isMobile: boolean }) {
+/** Passed to parent to open the same embedded payment flow as Orders. */
+export interface FloorPlanPayRequest {
+  totalKrw: number;
+  totalUsd: number;
+  checkNumber: string;
+  tableLabel: string;
+}
+
+export function TableDrawer({
+  table,
+  onClose,
+  isMobile,
+  onRequestPay,
+}: {
+  table: Table | null;
+  onClose: () => void;
+  isMobile: boolean;
+  onRequestPay?: (details: FloorPlanPayRequest) => void;
+}) {
   const { t } = useTranslation("floor");
   const C = useColors();
   const navigate = useNavigate();
@@ -115,16 +134,24 @@ export function TableDrawer({ table, onClose, isMobile }: { table: Table | null;
           <div className="flex gap-2 mt-4">
             <button
               onClick={() => {
+                const labelForPay = formatTableLabel(sel.label, t);
+                const details: FloorPlanPayRequest = {
+                  totalUsd: 0,
+                  totalKrw: sel.revenue ?? 0,
+                  checkNumber: `T-${sel.id}`,
+                  tableLabel: labelForPay,
+                };
                 onClose();
-                navigate("/pos/payment", {
-                  state: {
-                    totalUsd: 0,
-                    totalKrw: sel.revenue ?? 0,
-                    checkNumber: `T-${sel.id}`,
-                    tableLabel: sel.label,
-                    returnTo: "/pos",
-                  },
-                });
+                if (onRequestPay) {
+                  onRequestPay(details);
+                } else {
+                  navigate("/pos/payment", {
+                    state: {
+                      ...details,
+                      returnTo: "/pos/floor-plan",
+                    },
+                  });
+                }
               }}
               className="flex-1 py-2.5 rounded-lg text-sm font-semibold cursor-pointer"
               style={{ background: C.primary, color: "#fff" }}
@@ -151,44 +178,48 @@ export function TableDrawer({ table, onClose, isMobile }: { table: Table | null;
   );
 
   if (isMobile) {
-    // Bottom sheet
+    // Phone: dimmer + sheet sit behind POS chrome (z-50); slide up from bottom; pb lifts content above nav overlap
     return (
-      <div className="fixed inset-0 z-50" style={{ pointerEvents: visible ? "auto" : "none" }}>
-        {/* Backdrop */}
+      <>
         <div
-          className="absolute inset-0 transition-opacity duration-300"
-          style={{ background: "rgba(0,0,0,0.5)", opacity: visible ? 1 : 0 }}
+          className={POS_OVERLAY_BACKDROP}
+          style={{
+            background: "rgba(0,0,0,0.5)",
+            opacity: visible ? 1 : 0,
+            pointerEvents: visible ? "auto" : "none",
+          }}
           onClick={onClose}
         />
-        {/* Sheet */}
         <div
-          className="absolute left-0 right-0 bottom-0 rounded-t-2xl overflow-hidden transition-transform duration-300 ease-out flex flex-col"
+          className={`${POS_OVERLAY_SHEET_BOTTOM} rounded-t-2xl overflow-hidden flex flex-col pointer-events-auto shadow-2xl pb-20`}
           style={{
             background: C.card,
-            maxHeight: "75vh",
+            maxHeight: "min(85vh, calc(100dvh - 4rem))",
             transform: visible ? "translateY(0)" : "translateY(100%)",
           }}
         >
-          {/* Handle bar */}
           <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
             <div className="w-10 h-1 rounded-full" style={{ background: C.text3 }} />
           </div>
           {drawerContent}
         </div>
-      </div>
+      </>
     );
   }
 
-  // Right drawer
   return (
-    <div className="fixed inset-0 z-50" style={{ pointerEvents: visible ? "auto" : "none" }}>
+    <>
       <div
-        className="absolute inset-0 transition-opacity duration-300"
-        style={{ background: "rgba(0,0,0,0.4)", opacity: visible ? 1 : 0 }}
+        className="fixed top-16 left-0 right-0 bottom-20 z-40 transition-opacity duration-300 ease-out"
+        style={{
+          background: "rgba(0,0,0,0.4)",
+          opacity: visible ? 1 : 0,
+          pointerEvents: visible ? "auto" : "none",
+        }}
         onClick={onClose}
       />
       <div
-        className="absolute top-0 right-0 bottom-0 w-80 border-l overflow-hidden transition-transform duration-300 ease-out flex flex-col"
+        className="fixed top-16 right-0 bottom-20 w-80 max-w-[100vw] z-[60] border-l overflow-hidden flex flex-col pointer-events-auto transition-transform duration-300 ease-out"
         style={{
           background: C.card,
           borderColor: C.border,
@@ -197,6 +228,6 @@ export function TableDrawer({ table, onClose, isMobile }: { table: Table | null;
       >
         {drawerContent}
       </div>
-    </div>
+    </>
   );
 }

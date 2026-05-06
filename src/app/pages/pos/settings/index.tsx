@@ -151,7 +151,7 @@ function SettingsInner() {
                   <motion.div
                     initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
                     transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                    className={`fixed top-0 left-0 bottom-0 z-50 w-72 ${tc.drawerBg} border-r p-4 lg:hidden`}
+                    className={`fixed top-16 left-0 bottom-0 z-[45] w-72 ${tc.drawerBg} border-r p-4 pb-24 lg:hidden`}
                   >
                     <div className="flex items-center justify-between mb-4">
                       <h2 className={`text-[1rem] ${tc.heading}`}>{t("title")}</h2>
