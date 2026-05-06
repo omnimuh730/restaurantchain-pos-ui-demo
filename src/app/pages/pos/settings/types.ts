@@ -2,9 +2,7 @@ import type { ComponentType } from "react";
 
 export interface SettingGroup {
   id: string;
-  label: string;
   icon: ComponentType<{ className?: string }>;
-  description: string;
 }
 
 export type StaffRole = "Waiter" | "Chef" | "Cashier";

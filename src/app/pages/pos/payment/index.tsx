@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { QRCodeSVG } from "qrcode.react";
 import { motion } from "motion/react";
-import { ArrowLeft, Banknote, Check, CreditCard, Receipt, Split, X, AlertCircle } from "lucide-react";
+import { ArrowLeft, Banknote, Check, CreditCard, Split, X, AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { formatDomesticWon, formatForeignUsd } from "../../../../i18n/formatMoney";
 import { useThemeClasses } from "../theme-context";
 import cashImage from "../../../../imports/cash-payment.svg";
 
@@ -25,20 +27,8 @@ interface PaymentPageProps {
 
 type Method = "cash" | "credit" | "mix";
 
-function AmountPair({ krw, usd }: { krw: number; usd: number }) {
-  const showKrw = krw > 0;
-  const showUsd = usd > 0;
-  if (!showKrw && !showUsd) return <span className="text-red-600">$0.00</span>;
-  return (
-    <>
-      {showKrw && <span className="text-blue-600">₩{Math.round(krw).toLocaleString()}</span>}
-      {showKrw && showUsd && " + "}
-      {showUsd && <span className="text-red-600">${usd.toFixed(2)}</span>}
-    </>
-  );
-}
-
 export default function PaymentPage(props: PaymentPageProps = {}) {
+  const { t } = useTranslation("payment");
   const tc = useThemeClasses();
   const navigate = useNavigate();
   const { state } = useLocation() as { state: PaymentState | null };
@@ -68,13 +58,20 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
   const [cardPassword, setCardPassword] = useState("");
   const [processingStep, setProcessingStep] = useState<number | null>(null);
 
-  const processingSteps = [
-    "Verifying card number…",
-    "Verifying password…",
-    "Checking available balance…",
-    "Authorizing payment…",
-    "Payment approved",
-  ];
+  const processingSteps = t("processingSteps", { returnObjects: true }) as string[];
+
+  const AmountPair = ({ krw, usd }: { krw: number; usd: number }) => {
+    const showKrw = krw > 0;
+    const showUsd = usd > 0;
+    if (!showKrw && !showUsd) return <span className="text-red-600">{formatDomesticWon(0)}</span>;
+    return (
+      <>
+        {showKrw && <span className="text-blue-600">{formatDomesticWon(krw)}</span>}
+        {showKrw && showUsd && " + "}
+        {showUsd && <span className="text-red-600">{formatForeignUsd(usd)}</span>}
+      </>
+    );
+  };
 
   const VALID_CARD = "1111111111111111";
   const VALID_PWD = "12345678";
@@ -83,11 +80,11 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
 
   const failure = useMemo(() => {
     if (processingStep === null) return null;
-    if (cardNumber !== VALID_CARD) return { idx: 0, msg: "Card number not recognized. Please check the card number and try again." };
-    if (cardPassword !== VALID_PWD) return { idx: 1, msg: "Incorrect password. Please try again." };
-    if (totalKrw > BALANCE_LIMIT_KRW || totalUsd > BALANCE_LIMIT_USD) return { idx: 2, msg: "Insufficient balance on this card." };
+    if (cardNumber !== VALID_CARD) return { idx: 0, msg: t("errors.card") };
+    if (cardPassword !== VALID_PWD) return { idx: 1, msg: t("errors.pwd") };
+    if (totalKrw > BALANCE_LIMIT_KRW || totalUsd > BALANCE_LIMIT_USD) return { idx: 2, msg: t("errors.balance") };
     return null;
-  }, [processingStep, cardNumber, cardPassword, totalKrw, totalUsd]);
+  }, [processingStep, cardNumber, cardPassword, totalKrw, totalUsd, t]);
 
   useEffect(() => {
     if (processingStep === null) return;
@@ -101,27 +98,57 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
     }
     const t = setTimeout(() => setProcessingStep((s) => (s ?? 0) + 1), 800);
     return () => clearTimeout(t);
-  }, [processingStep, failure]);
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  }, [processingStep, failure, processingSteps.length]);
+  const [methodTouchStartX, setMethodTouchStartX] = useState<number | null>(null);
 
-  const handleTouchStart = (e: React.TouchEvent) => setTouchStartX(e.touches[0].clientX);
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX == null) return;
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    if (dx < -40) setCreditView(1);
-    else if (dx > 40) setCreditView(0);
-    setTouchStartX(null);
+  const handleMethodTouchStart = (e: React.TouchEvent) => setMethodTouchStartX(e.touches[0].clientX);
+  const handleMethodTouchEnd = (e: React.TouchEvent) => {
+    if (methodTouchStartX == null) return;
+    const dx = e.changedTouches[0].clientX - methodTouchStartX;
+
+    // 4-page swipe system: Cash → Credit QR → Credit Card → Mix
+    if (method === "cash" && dx < -50) {
+      setMethod("credit");
+      setCreditView(0); // QR view
+    } else if (method === "credit" && creditView === 0 && dx < -50) {
+      setCreditView(1); // Card view
+    } else if (method === "credit" && creditView === 1 && dx < -50) {
+      setMethod("mix");
+    } else if (method === "credit" && creditView === 1 && dx > 50) {
+      setCreditView(0); // Back to QR view
+    } else if (method === "credit" && creditView === 0 && dx > 50) {
+      setMethod("cash");
+    } else if (method === "mix" && dx > 50) {
+      setMethod("credit");
+      setCreditView(1); // Card view
+    }
+    setMethodTouchStartX(null);
   };
-  const handlePointerDown = (e: React.PointerEvent) => {
+  const handleMethodPointerDown = (e: React.PointerEvent) => {
     if (e.pointerType === "touch") return;
-    setTouchStartX(e.clientX);
+    setMethodTouchStartX(e.clientX);
   };
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (e.pointerType === "touch" || touchStartX == null) return;
-    const dx = e.clientX - touchStartX;
-    if (dx < -40) setCreditView(1);
-    else if (dx > 40) setCreditView(0);
-    setTouchStartX(null);
+  const handleMethodPointerUp = (e: React.PointerEvent) => {
+    if (e.pointerType === "touch" || methodTouchStartX == null) return;
+    const dx = e.clientX - methodTouchStartX;
+
+    // 4-page swipe system: Cash → Credit QR → Credit Card → Mix
+    if (method === "cash" && dx < -50) {
+      setMethod("credit");
+      setCreditView(0); // QR view
+    } else if (method === "credit" && creditView === 0 && dx < -50) {
+      setCreditView(1); // Card view
+    } else if (method === "credit" && creditView === 1 && dx < -50) {
+      setMethod("mix");
+    } else if (method === "credit" && creditView === 1 && dx > 50) {
+      setCreditView(0); // Back to QR view
+    } else if (method === "credit" && creditView === 0 && dx > 50) {
+      setMethod("cash");
+    } else if (method === "mix" && dx > 50) {
+      setMethod("credit");
+      setCreditView(1); // Card view
+    }
+    setMethodTouchStartX(null);
   };
   const maskCard = (digits: string) => {
     const d = digits.slice(0, 16);
@@ -233,25 +260,29 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
   const amountInput = (
     value: string,
     onChange: (v: string) => void,
-    label: string,
-    symbol: "₩" | "$",
+    currency: "krw" | "usd",
     step: number,
     placeholder: string,
-  ) => (
-    <div>
-      <div className="relative">
-        <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-[0.875rem] ${symbol === "₩" ? "text-blue-600" : "text-red-600"}`}>{symbol}</span>
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          type="number"
-          step={step}
-          placeholder={placeholder}
-          className={`${tc.input} pl-7 ${symbol === "₩" ? "!text-blue-600" : "!text-red-600"}`}
-        />
+  ) => {
+    const isKrw = currency === "krw";
+    return (
+      <div>
+        <div className="relative">
+          <span className={`absolute left-2.5 top-1/2 -translate-y-1/2 text-[0.8125rem] ${isKrw ? "text-blue-600" : "text-red-600"}`}>
+            {isKrw ? "원" : "$"}
+          </span>
+          <input
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            type="number"
+            step={step}
+            placeholder={placeholder}
+            className={`${tc.input} ${isKrw ? "pl-9 !text-blue-600" : "pl-7 !text-red-600"}`}
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className={`h-full overflow-y-auto ${tc.page}`}>
@@ -263,12 +294,12 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
             className={`w-9 h-9 rounded-lg flex items-center justify-center cursor-pointer transition-colors ${
               tc.isDark ? "bg-slate-800 hover:bg-slate-700 text-slate-300" : "bg-white hover:bg-slate-50 text-slate-600 border border-slate-200"
             }`}
-            aria-label="Back"
+            aria-label={t("back")}
           >
             <ArrowLeft className="w-4.5 h-4.5" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className={`text-[1.125rem] ${tc.heading}`}>Payment</h1>
+            <h1 className={`text-[1.125rem] ${tc.heading}`}>{t("title")}</h1>
             <p className={`text-[0.75rem] ${tc.subtext}`}>{tableLabel} · {checkNumber}</p>
           </div>
           
@@ -277,9 +308,9 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
         {/* Amount summary */}
         <div className="mb-6">
           <p className="text-[1.5rem] font-bold">
-            {hasKrw && <span className="text-blue-600">₩{Math.round(totalKrw).toLocaleString()}</span>}
+            {hasKrw && <span className="text-blue-600">{formatDomesticWon(totalKrw)}</span>}
             {hasKrw && hasUsd && <span className={tc.subtext}> + </span>}
-            {hasUsd && <span className="text-red-600">${totalUsd.toFixed(2)}</span>}
+            {hasUsd && <span className="text-red-600">{formatForeignUsd(totalUsd)}</span>}
           </p>
         </div>
 
@@ -287,196 +318,205 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
           <>
             {/* Method selector */}
             <div className="flex gap-2 mb-6">
-              {methodBtn("cash", "Cash", Banknote)}
-              {methodBtn("credit", "Credit", CreditCard)}
-              {methodBtn("mix", "Mix", Split)}
+              {methodBtn("cash", t("methods.cash"), Banknote)}
+              {methodBtn("credit", t("methods.credit"), CreditCard)}
+              {methodBtn("mix", t("methods.mix"), Split)}
             </div>
 
             {/* Method content */}
-            {method === "cash" && (
-              <div className="flex-1 flex flex-col items-center justify-center mb-6">
-                <img src={cashImage} alt="Cash payment" className="w-58 h-58 object-contain [filter:drop-shadow(0_0_0.4px_#2563eb)_drop-shadow(0_0_0.4px_#2563eb)]" />
-              </div>
-            )}
-
-            {method === "credit" && (
+            <div
+              className="flex-1 mb-6 flex flex-col items-center justify-center overflow-hidden w-full"
+              onTouchStart={handleMethodTouchStart}
+              onTouchEnd={handleMethodTouchEnd}
+              onPointerDown={handleMethodPointerDown}
+              onPointerUp={handleMethodPointerUp}
+            >
               <div
-                className="flex-1 flex flex-col items-center justify-center mb-6 overflow-hidden select-none"
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-                onPointerDown={handlePointerDown}
-                onPointerUp={handlePointerUp}
+                className="flex transition-transform duration-300 ease-out w-full"
+                style={{
+                  transform: `translateX(-${method === "cash" ? 0 : method === "credit" ? 100 : 200}%)`
+                }}
               >
-                <div className="w-full overflow-hidden">
-                  <div
-                    className="flex transition-transform duration-300 ease-out"
-                    style={{ transform: `translateX(-${creditView * 100}%)` }}
-                  >
-                    <div className="w-full shrink-0 flex justify-center">
-                      <div className="bg-white rounded-xl p-4 border border-slate-200">
-                        <QRCodeSVG value={qrPayload} size={224} level="M" />
+                {/* Cash View */}
+                <div className="w-full shrink-0 flex flex-col items-center justify-center">
+                  <img src={cashImage} alt={t("cashAlt")} className="w-58 h-58 object-contain [filter:drop-shadow(0_0_0.4px_#2563eb)_drop-shadow(0_0_0.4px_#2563eb)]" />
+                </div>
+
+                {/* Credit View */}
+                <div className="w-full shrink-0 flex flex-col items-center justify-center">
+                  <div className="flex flex-col items-center justify-center overflow-hidden select-none">
+                    <div className="w-full overflow-hidden">
+                      <div
+                        className="flex transition-transform duration-300 ease-out"
+                        style={{ transform: `translateX(-${creditView * 100}%)` }}
+                      >
+                        <div className="w-full shrink-0 flex justify-center">
+                          <div className="bg-white rounded-xl p-4 border border-slate-200">
+                            <QRCodeSVG value={qrPayload} size={224} level="M" />
+                          </div>
+                        </div>
+                        <div className="w-full shrink-0 flex justify-center px-4">
+                          <div className={`w-full max-w-xs rounded-xl p-5 border ${tc.isDark ? "border-slate-700 bg-slate-800/40" : "border-slate-200 bg-white"} space-y-4`}>
+                            <div>
+                              <label className={`block mb-1.5 ${tc.subtle}`}>{t("cardNumber")}</label>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                autoComplete="off"
+                                value={maskCard(cardNumber)}
+                                onChange={(e) => {
+                                  const newDigits = e.target.value.replace(/[^0-9]/g, "");
+                                  if (newDigits.length > 0) {
+                                    setCardNumber((prev) => (prev + newDigits).slice(0, 16));
+                                  } else {
+                                    const prevMaskedLen = maskCard(cardNumber).length;
+                                    const removed = Math.max(1, prevMaskedLen - e.target.value.length);
+                                    setCardNumber((prev) => prev.slice(0, Math.max(0, prev.length - removed)));
+                                  }
+                                }}
+                                placeholder="****-****-****-****"
+                                className={`${tc.input} tracking-widest`}
+                              />
+                            </div>
+                            <div>
+                              <label className={`block mb-1.5 ${tc.subtle}`}>{t("password")}</label>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                autoComplete="off"
+                                value={maskPassword(cardPassword)}
+                                onChange={(e) => {
+                                  const newDigits = e.target.value.replace(/[^0-9]/g, "");
+                                  if (newDigits.length > 0) {
+                                    setCardPassword((prev) => prev + newDigits);
+                                  } else {
+                                    const removed = Math.max(1, cardPassword.length - e.target.value.length);
+                                    setCardPassword((prev) => prev.slice(0, Math.max(0, prev.length - removed)));
+                                  }
+                                }}
+                                placeholder="********"
+                                className={`${tc.input} tracking-widest`}
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              disabled={cardNumber.length < 16 || cardPassword.length < 1}
+                              onClick={() => setProcessingStep(0)}
+                              className="w-full py-2.5 rounded-lg bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+                            >
+                              {t("proceed")}
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div className="w-full shrink-0 flex justify-center px-4">
-                      <div className={`w-full max-w-xs rounded-xl p-5 border ${tc.isDark ? "border-slate-700 bg-slate-800/40" : "border-slate-200 bg-white"} space-y-4`}>
-                        <div>
-                          <label className={`block mb-1.5 ${tc.subtle}`}>Card Number</label>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            autoComplete="off"
-                            value={maskCard(cardNumber)}
-                            onChange={(e) => {
-                              const newDigits = e.target.value.replace(/[^0-9]/g, "");
-                              if (newDigits.length > 0) {
-                                setCardNumber((prev) => (prev + newDigits).slice(0, 16));
-                              } else {
-                                const prevMaskedLen = maskCard(cardNumber).length;
-                                const removed = Math.max(1, prevMaskedLen - e.target.value.length);
-                                setCardNumber((prev) => prev.slice(0, Math.max(0, prev.length - removed)));
-                              }
-                            }}
-                            placeholder="****-****-****-****"
-                            className={`${tc.input} tracking-widest`}
-                          />
-                        </div>
-                        <div>
-                          <label className={`block mb-1.5 ${tc.subtle}`}>Password</label>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            autoComplete="off"
-                            value={maskPassword(cardPassword)}
-                            onChange={(e) => {
-                              const newDigits = e.target.value.replace(/[^0-9]/g, "");
-                              if (newDigits.length > 0) {
-                                setCardPassword((prev) => prev + newDigits);
-                              } else {
-                                const removed = Math.max(1, cardPassword.length - e.target.value.length);
-                                setCardPassword((prev) => prev.slice(0, Math.max(0, prev.length - removed)));
-                              }
-                            }}
-                            placeholder="********"
-                            className={`${tc.input} tracking-widest`}
-                          />
-                        </div>
+                    <div className="flex flex-col items-center gap-2 mt-4">
+                      <div className="flex gap-2">
                         <button
                           type="button"
-                          disabled={cardNumber.length < 16 || cardPassword.length < 1}
-                          onClick={() => setProcessingStep(0)}
-                          className="w-full py-2.5 rounded-lg bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
-                        >
-                          Proceed
-                        </button>
+                          onClick={() => setCreditView(0)}
+                          className={`w-2 h-2 rounded-full transition-colors ${creditView === 0 ? "bg-blue-600" : tc.isDark ? "bg-slate-600" : "bg-slate-300"}`}
+                          aria-label={t("qrView")}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setCreditView(1)}
+                          className={`w-2 h-2 rounded-full transition-colors ${creditView === 1 ? "bg-blue-600" : tc.isDark ? "bg-slate-600" : "bg-slate-300"}`}
+                          aria-label={t("manualEntry")}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 text-blue-600 select-none">
+                        {creditView === 1 && (
+                          <motion.span
+                            className="tracking-tighter"
+                            animate={{ x: [0, -6, 0], opacity: [0.4, 1, 0.4] }}
+                            transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                            aria-hidden
+                          >
+                            {"<<"}
+                          </motion.span>
+                        )}
+                        <span className="text-[0.8125rem]">
+                          {creditView === 0 ? t("swipeToCard") : t("swipeToQr")}
+                        </span>
+                        {creditView === 0 && (
+                          <motion.span
+                            className="tracking-tighter"
+                            animate={{ x: [0, 6, 0], opacity: [0.4, 1, 0.4] }}
+                            transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                            aria-hidden
+                          >
+                            {">>"}
+                          </motion.span>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col items-center gap-2 mt-4">
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setCreditView(0)}
-                      className={`w-2 h-2 rounded-full transition-colors ${creditView === 0 ? "bg-blue-600" : tc.isDark ? "bg-slate-600" : "bg-slate-300"}`}
-                      aria-label="QR view"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setCreditView(1)}
-                      className={`w-2 h-2 rounded-full transition-colors ${creditView === 1 ? "bg-blue-600" : tc.isDark ? "bg-slate-600" : "bg-slate-300"}`}
-                      aria-label="Manual entry view"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 text-blue-600 select-none">
-                    {creditView === 1 && (
-                      <motion.span
-                        className="tracking-tighter"
-                        animate={{ x: [0, -6, 0], opacity: [0.4, 1, 0.4] }}
-                        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-                        aria-hidden
-                      >
-                        {"<<"}
-                      </motion.span>
+
+                {/* Mix View */}
+                <div className="w-full shrink-0 flex flex-col items-center justify-center">
+                  <div className="flex flex-col items-center w-full max-w-2xl">
+                    <div className={`w-full grid grid-cols-2 gap-0 rounded-xl border ${tc.isDark ? "border-slate-700" : "border-slate-200"} overflow-hidden mb-4`}>
+                      {/* Cash column */}
+                      <div className={`p-4 border-r ${tc.isDark ? "border-slate-700" : "border-slate-200"}`}>
+                        <p className={`text-[0.875rem] ${tc.heading} mb-3 text-[16px] flex items-center justify-center gap-1.5`}>
+                          <Banknote className="w-4 h-4" /> {t("cashCol")}
+                        </p>
+                        <div className="space-y-3">
+                          {hasKrw && (
+                            <div onFocus={() => setLastEdited((s) => ({ ...s, krw: "cash" }))}>
+                              {amountInput(cashKrw, (v) => { setLastEdited((s) => ({ ...s, krw: "cash" })); setCashKrw(v); }, "krw", 100, "0")}
+                            </div>
+                          )}
+                          {hasUsd && (
+                            <div onFocus={() => setLastEdited((s) => ({ ...s, usd: "cash" }))}>
+                              {amountInput(cashUsd, (v) => { setLastEdited((s) => ({ ...s, usd: "cash" })); setCashUsd(v); }, "usd", 0.01, "0.00")}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {/* Credit column */}
+                      <div className="p-4">
+                        <p className={`text-[0.875rem] ${tc.heading} mb-3 text-[16px] flex items-center justify-center gap-1.5`}>
+                          <CreditCard className="w-4 h-4" /> {t("creditCol")}
+                        </p>
+                        <div className="space-y-3">
+                          {hasKrw && (
+                            <div onFocus={() => setLastEdited((s) => ({ ...s, krw: "credit" }))}>
+                              {amountInput(creditKrw, (v) => { setLastEdited((s) => ({ ...s, krw: "credit" })); setCreditKrw(v); }, "krw", 100, "0")}
+                            </div>
+                          )}
+                          {hasUsd && (
+                            <div onFocus={() => setLastEdited((s) => ({ ...s, usd: "credit" }))}>
+                              {amountInput(creditUsd, (v) => { setLastEdited((s) => ({ ...s, usd: "credit" })); setCreditUsd(v); }, "usd", 0.01, "0.00")}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {!mixKrwOk && (
+                      <p className="text-[0.75rem] text-red-500 mb-2 text-center w-full">
+                        {t("mixMustEqualKrw", { amount: formatDomesticWon(totalKrw) })}
+                      </p>
                     )}
-                    <span className="text-[0.8125rem]">
-                      {creditView === 0 ? "Swipe to card payment" : "Swipe back to QR"}
-                    </span>
-                    {creditView === 0 && (
-                      <motion.span
-                        className="tracking-tighter"
-                        animate={{ x: [0, 6, 0], opacity: [0.4, 1, 0.4] }}
-                        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-                        aria-hidden
-                      >
-                        {">>"}
-                      </motion.span>
+                    {!mixUsdOk && (
+                      <p className="text-[0.75rem] text-red-500 mb-2 text-center w-full">
+                        {t("mixMustEqualUsd", { amount: formatForeignUsd(totalUsd) })}
+                      </p>
+                    )}
+
+                    {(creditKrwNum > 0 || creditUsdNum > 0) && (
+                      <div className="flex flex-col items-center justify-center mb-6 w-full">
+                        <div className="bg-white rounded-xl p-3 border border-slate-200">
+                          <QRCodeSVG value={qrPayload} size={180} level="M" />
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
               </div>
-            )}
-
-            {method === "mix" && (
-              <div className="flex-1 flex flex-col">
-                <div className={`grid grid-cols-2 gap-0 rounded-xl border ${tc.isDark ? "border-slate-700" : "border-slate-200"} overflow-hidden mb-4`}>
-                  {/* Cash column */}
-                  <div className={`p-4 border-r ${tc.isDark ? "border-slate-700" : "border-slate-200"}`}>
-                    <p className={`text-[0.875rem] ${tc.heading} mb-3 text-[16px] flex items-center justify-center gap-1.5`}>
-                      <Banknote className="w-4 h-4" /> Cash
-                    </p>
-                    <div className="space-y-3">
-                      {hasKrw && (
-                        <div onFocus={() => setLastEdited((s) => ({ ...s, krw: "cash" }))}>
-                          {amountInput(cashKrw, (v) => { setLastEdited((s) => ({ ...s, krw: "cash" })); setCashKrw(v); }, "Domestic", "₩", 100, "0")}
-                        </div>
-                      )}
-                      {hasUsd && (
-                        <div onFocus={() => setLastEdited((s) => ({ ...s, usd: "cash" }))}>
-                          {amountInput(cashUsd, (v) => { setLastEdited((s) => ({ ...s, usd: "cash" })); setCashUsd(v); }, "Foreign", "$", 0.01, "0.00")}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {/* Credit column */}
-                  <div className="p-4">
-                    <p className={`text-[0.875rem] ${tc.heading} mb-3 text-[16px] flex items-center justify-center gap-1.5`}>
-                      <CreditCard className="w-4 h-4" /> Credit
-                    </p>
-                    <div className="space-y-3">
-                      {hasKrw && (
-                        <div onFocus={() => setLastEdited((s) => ({ ...s, krw: "credit" }))}>
-                          {amountInput(creditKrw, (v) => { setLastEdited((s) => ({ ...s, krw: "credit" })); setCreditKrw(v); }, "Domestic", "₩", 100, "0")}
-                        </div>
-                      )}
-                      {hasUsd && (
-                        <div onFocus={() => setLastEdited((s) => ({ ...s, usd: "credit" }))}>
-                          {amountInput(creditUsd, (v) => { setLastEdited((s) => ({ ...s, usd: "credit" })); setCreditUsd(v); }, "Foreign", "$", 0.01, "0.00")}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                {!mixKrwOk && (
-                  <p className="text-[0.75rem] text-red-500 mb-2">
-                    Cash + credit must equal <span className="text-blue-600">₩{Math.round(totalKrw).toLocaleString()}</span>
-                  </p>
-                )}
-                {!mixUsdOk && (
-                  <p className="text-[0.75rem] text-red-500 mb-2">
-                    Cash + credit must equal <span className="text-red-600">${totalUsd.toFixed(2)}</span>
-                  </p>
-                )}
-
-                {(creditKrwNum > 0 || creditUsdNum > 0) && (
-                  <div className="flex-1 flex flex-col items-center justify-center mb-6">
-                    
-                    <div className="bg-white rounded-xl p-3 border border-slate-200">
-                      <QRCodeSVG value={qrPayload} size={180} level="M" />
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            </div>
 
             {/* Confirm */}
             <button
@@ -490,7 +530,7 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
                     : "bg-slate-200 text-slate-400 cursor-not-allowed"
               }`}
             >
-              Confirm Payment
+              {t("confirmPayment")}
             </button>
           </>
         )}
@@ -500,15 +540,15 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
             <div className="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center mb-3 shadow-lg">
               <Check className="w-7 h-7" strokeWidth={2.5} />
             </div>
-            <h2 className={`text-[1.125rem] ${tc.heading}`}>Payment complete</h2>
+            <h2 className={`text-[1.125rem] ${tc.heading}`}>{t("paymentComplete")}</h2>
             <p className={`text-[0.8125rem] ${tc.subtext} mt-1`}>
-              {method === "cash" && <>Cash <AmountPair krw={cashKrwNum} usd={cashUsdNum} /></>}
-              {method === "credit" && <>Credit <AmountPair krw={totalKrw} usd={totalUsd} /></>}
+              {method === "cash" && <>{t("cash")} <AmountPair krw={cashKrwNum} usd={cashUsdNum} /></>}
+              {method === "credit" && <>{t("credit")} <AmountPair krw={totalKrw} usd={totalUsd} /></>}
               {method === "mix" && (
                 <>
-                  Cash <AmountPair krw={cashKrwNum} usd={cashUsdNum} />
+                  {t("cash")} <AmountPair krw={cashKrwNum} usd={cashUsdNum} />
                   {" · "}
-                  Credit <AmountPair krw={creditKrwNum} usd={creditUsdNum} />
+                  {t("credit")} <AmountPair krw={creditKrwNum} usd={creditUsdNum} />
                 </>
               )}
             </p>
@@ -516,7 +556,7 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
               onClick={finish}
               className="mt-5 w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[0.875rem] cursor-pointer transition-colors inline-flex items-center justify-center gap-2"
             >
-              <Check className="w-4 h-4" /> Done
+              <Check className="w-4 h-4" /> {t("done")}
             </button>
           </div>
         )}
@@ -536,14 +576,14 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
                   <Check className="w-4 h-4 text-white" />
                 </div>
               )}
-              <h3 className={tc.heading}>{failure && processingStep === failure.idx ? "Payment Failed" : "Card Payment"}</h3>
+              <h3 className={tc.heading}>{failure && processingStep === failure.idx ? t("paymentFailed") : t("cardPayment")}</h3>
             </div>
             <ul className="space-y-2">
               {processingSteps.map((label, i) => {
                 const isFailed = failure && i === failure.idx && processingStep === failure.idx;
                 const status = isFailed ? "failed" : i < processingStep ? "done" : i === processingStep ? "active" : "pending";
                 return (
-                  <li key={label} className="flex items-center gap-2">
+                  <li key={`step-${i}`} className="flex items-center gap-2">
                     {status === "done" && <Check className="w-4 h-4 text-blue-600" />}
                     {status === "active" && <span className="w-3 h-3 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />}
                     {status === "failed" && <X className="w-4 h-4 text-red-600" />}
@@ -566,7 +606,7 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
                   onClick={() => setProcessingStep(null)}
                   className={`px-4 py-2 rounded-lg ${tc.isDark ? "bg-slate-700 hover:bg-slate-600 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700"} transition-colors`}
                 >
-                  Close
+                  {t("close")}
                 </button>
               </div>
             )}

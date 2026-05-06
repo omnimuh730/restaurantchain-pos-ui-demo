@@ -1,0 +1,14 @@
+{
+  "loading": "불러오는 중…",
+  "clearAll": "전체 지우기",
+  "clearAllAria": "알림 전체 지우기",
+  "emDash": "—",
+  "lockScreen": {
+    "passwordLabel": "비밀번호",
+    "passwordPlaceholder": "비밀번호를 입력하여야 합니다",
+    "unlock": "잠금 해제",
+    "unlocking": "잠금 해제 중…",
+    "switchAccount": "계정 전환",
+    "passwordMinError": "비밀번호를 입력하여야 합니다 (최소 6자)."
+  }
+}

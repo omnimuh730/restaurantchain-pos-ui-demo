@@ -1,27 +1,27 @@
 import { ChevronDown, ChevronRight, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 import { useState } from "react";
 
-// Kitchen tables mapped to floors
 export const KITCHEN_FLOORS = [
   {
     id: "1F",
-    label: "1st Floor",
-    tables: ["Table 1", "Table 2", "Table 3", "Table 4", "Table 5"],
+    labelKey: "tables.floor_1f",
+    tables: ["T1", "T2", "T3", "T4", "T5"],
   },
   {
     id: "2F",
-    label: "2nd Floor",
+    labelKey: "tables.floor_2f",
     tables: [
-      "Table 6", "Table 7", "Table 8", "Table 9", "Table 10",
-      "Table 11", "Table 12", "Table 13", "Table 14", "Table 15",
-      "Table 16", "Table 17", "Table 18", "Table 19", "Table 20",
+      "T6", "T7", "T8", "T9", "T10",
+      "T11", "T12", "T13", "T14", "T15",
+      "T16", "T17", "T18", "T19", "T20",
     ],
   },
   {
     id: "bar",
-    label: "Bar",
-    tables: ["Bar 1", "Bar 2", "Bar 3"],
+    labelKey: "tables.floor_bar",
+    tables: ["BAR1", "BAR2", "BAR3"],
   },
 ];
 
@@ -36,11 +36,21 @@ interface TableFilterSidebarProps {
 
 function FilterContent({ selectedTables, setSelectedTables }: Pick<TableFilterSidebarProps, "selectedTables" | "setSelectedTables">) {
   const tc = useThemeClasses();
+  const { t } = useTranslation("kitchen");
+  const { t: tOrders } = useTranslation("orders");
   const [expandedFloors, setExpandedFloors] = useState<Set<string>>(
-    new Set(KITCHEN_FLOORS.map((f) => f.id))
+    new Set(KITCHEN_FLOORS.map((f) => f.id)),
   );
 
-  const allSelected = ALL_TABLES.every((t) => selectedTables.has(t));
+  const tableLabel = (tableId: string) => {
+    const tm = /^T(\d+)$/.exec(tableId);
+    if (tm) return tOrders("ui.tableNumbered", { n: Number(tm[1]) });
+    const bm = /^BAR(\d+)$/.exec(tableId);
+    if (bm) return tOrders("ui.barNumbered", { n: Number(bm[1]) });
+    return tableId;
+  };
+
+  const allSelected = ALL_TABLES.every((tid) => selectedTables.has(tid));
 
   const toggleAll = () => {
     setSelectedTables(allSelected ? new Set() : new Set(ALL_TABLES));
@@ -48,20 +58,20 @@ function FilterContent({ selectedTables, setSelectedTables }: Pick<TableFilterSi
 
   const toggleFloor = (floorId: string) => {
     const floor = KITCHEN_FLOORS.find((f) => f.id === floorId)!;
-    const allFloorSelected = floor.tables.every((t) => selectedTables.has(t));
+    const allFloorSelected = floor.tables.every((tid) => selectedTables.has(tid));
     const next = new Set(selectedTables);
     if (allFloorSelected) {
-      floor.tables.forEach((t) => next.delete(t));
+      floor.tables.forEach((tid) => next.delete(tid));
     } else {
-      floor.tables.forEach((t) => next.add(t));
+      floor.tables.forEach((tid) => next.add(tid));
     }
     setSelectedTables(next);
   };
 
-  const toggleTable = (table: string) => {
+  const toggleTable = (tableId: string) => {
     const next = new Set(selectedTables);
-    if (next.has(table)) next.delete(table);
-    else next.add(table);
+    if (next.has(tableId)) next.delete(tableId);
+    else next.add(tableId);
     setSelectedTables(next);
   };
 
@@ -74,7 +84,7 @@ function FilterContent({ selectedTables, setSelectedTables }: Pick<TableFilterSi
 
   const floorState = (floorId: string) => {
     const floor = KITCHEN_FLOORS.find((f) => f.id === floorId)!;
-    const count = floor.tables.filter((t) => selectedTables.has(t)).length;
+    const count = floor.tables.filter((tid) => selectedTables.has(tid)).length;
     if (count === 0) return "none";
     if (count === floor.tables.length) return "all";
     return "partial";
@@ -84,30 +94,25 @@ function FilterContent({ selectedTables, setSelectedTables }: Pick<TableFilterSi
 
   return (
     <>
-      {/* All Floors toggle */}
       <button
         onClick={toggleAll}
         className={`w-full text-left px-4 py-3 text-[0.8125rem] cursor-pointer transition-colors border-b ${tc.border} flex items-center justify-between ${
-          allSelected
-            ? "bg-blue-600 text-white"
-            : `${tc.text1} ${tc.hover}`
+          allSelected ? "bg-blue-600 text-white" : `${tc.text1} ${tc.hover}`
         }`}
       >
-        <span>All Floors</span>
+        <span>{t("tables.all_floors")}</span>
         <span className={`text-[0.6875rem] ${allSelected ? "text-blue-100" : tc.muted}`}>
           {selectedCount}/{ALL_TABLES.length}
         </span>
       </button>
 
-      {/* Floor groups */}
       <div className="flex-1 overflow-y-auto">
         {KITCHEN_FLOORS.map((floor) => {
           const state = floorState(floor.id);
           const expanded = expandedFloors.has(floor.id);
-          const floorSelectedCount = floor.tables.filter((t) => selectedTables.has(t)).length;
+          const floorSelectedCount = floor.tables.filter((tid) => selectedTables.has(tid)).length;
           return (
             <div key={floor.id} className={`border-b ${tc.borderHalf}`}>
-              {/* Floor header */}
               <div className="flex items-center">
                 <button
                   onClick={() => toggleExpand(floor.id)}
@@ -123,10 +128,14 @@ function FilterContent({ selectedTables, setSelectedTables }: Pick<TableFilterSi
                   onClick={() => toggleFloor(floor.id)}
                   className={`flex-1 text-left py-2.5 pr-4 text-[0.8125rem] cursor-pointer transition-colors ${
                     state === "all"
-                      ? tc.isDark ? "text-blue-400" : "text-blue-600"
+                      ? tc.isDark
+                        ? "text-blue-400"
+                        : "text-blue-600"
                       : state === "partial"
-                      ? tc.isDark ? "text-blue-400/70" : "text-blue-500/70"
-                      : tc.text1
+                        ? tc.isDark
+                          ? "text-blue-400/70"
+                          : "text-blue-500/70"
+                        : tc.text1
                   }`}
                 >
                   <span className="flex items-center justify-between">
@@ -136,8 +145,10 @@ function FilterContent({ selectedTables, setSelectedTables }: Pick<TableFilterSi
                           state === "all"
                             ? "bg-blue-500 border-blue-500"
                             : state === "partial"
-                            ? "bg-blue-500/30 border-blue-500"
-                            : tc.isDark ? "border-slate-500" : "border-slate-400"
+                              ? "bg-blue-500/30 border-blue-500"
+                              : tc.isDark
+                                ? "border-slate-500"
+                                : "border-slate-400"
                         }`}
                       >
                         {state === "all" && (
@@ -145,11 +156,9 @@ function FilterContent({ selectedTables, setSelectedTables }: Pick<TableFilterSi
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
                         )}
-                        {state === "partial" && (
-                          <span className="w-1.5 h-0.5 bg-blue-500 rounded" />
-                        )}
+                        {state === "partial" && <span className="w-1.5 h-0.5 bg-blue-500 rounded" />}
                       </span>
-                      {floor.label}
+                      {t(floor.labelKey)}
                     </span>
                     <span className={`text-[0.6875rem] ${tc.muted}`}>
                       {floorSelectedCount}/{floor.tables.length}
@@ -158,15 +167,14 @@ function FilterContent({ selectedTables, setSelectedTables }: Pick<TableFilterSi
                 </button>
               </div>
 
-              {/* Tables */}
               {expanded && (
                 <div className="flex flex-col pb-1">
-                  {floor.tables.map((table) => {
-                    const active = selectedTables.has(table);
+                  {floor.tables.map((tableId) => {
+                    const active = selectedTables.has(tableId);
                     return (
                       <button
-                        key={table}
-                        onClick={() => toggleTable(table)}
+                        key={tableId}
+                        onClick={() => toggleTable(tableId)}
                         className={`w-full text-left pl-10 pr-4 py-2 text-[0.8125rem] cursor-pointer transition-colors ${
                           active
                             ? tc.isDark
@@ -178,12 +186,10 @@ function FilterContent({ selectedTables, setSelectedTables }: Pick<TableFilterSi
                         <span className="flex items-center gap-2.5">
                           <span
                             className={`w-2.5 h-2.5 rounded-full border-2 ${
-                              active
-                                ? "bg-blue-500 border-blue-500"
-                                : tc.isDark ? "border-slate-500" : "border-slate-400"
+                              active ? "bg-blue-500 border-blue-500" : tc.isDark ? "border-slate-500" : "border-slate-400"
                             }`}
                           />
-                          {table}
+                          {tableLabel(tableId)}
                         </span>
                       </button>
                     );
@@ -200,34 +206,24 @@ function FilterContent({ selectedTables, setSelectedTables }: Pick<TableFilterSi
 
 export function TableFilterSidebar({ selectedTables, setSelectedTables, open, onClose }: TableFilterSidebarProps) {
   const tc = useThemeClasses();
+  const { t } = useTranslation("kitchen");
 
   return (
     <>
-      {/* Desktop: static sidebar */}
-      <div
-        className={`hidden md:flex w-52 shrink-0 border-r ${tc.border} ${tc.raised} flex-col overflow-hidden`}
-      >
+      <div className={`hidden md:flex w-52 shrink-0 border-r ${tc.border} ${tc.raised} flex-col overflow-hidden`}>
         <div className={`px-4 py-3 border-b ${tc.border}`}>
-          <span className={`text-[0.8125rem] ${tc.heading}`}>My Tables</span>
+          <span className={`text-[0.8125rem] ${tc.heading}`}>{t("tables.my_tables")}</span>
         </div>
         <FilterContent selectedTables={selectedTables} setSelectedTables={setSelectedTables} />
       </div>
 
-      {/* Mobile: drawer overlay */}
       {open && (
         <div className="md:hidden fixed inset-0 z-50 flex">
-          {/* Backdrop */}
           <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-          {/* Drawer */}
-          <div
-            className={`relative w-72 max-w-[80vw] ${tc.raised} flex flex-col h-full shadow-xl animate-slide-in-left`}
-          >
+          <div className={`relative w-72 max-w-[80vw] ${tc.raised} flex flex-col h-full shadow-xl animate-slide-in-left`}>
             <div className={`px-4 py-3 border-b ${tc.border} flex items-center justify-between`}>
-              <span className={`text-[0.8125rem] ${tc.heading}`}>My Tables</span>
-              <button
-                onClick={onClose}
-                className={`p-1.5 rounded-lg cursor-pointer ${tc.hover} ${tc.subtext}`}
-              >
+              <span className={`text-[0.8125rem] ${tc.heading}`}>{t("tables.my_tables")}</span>
+              <button onClick={onClose} className={`p-1.5 rounded-lg cursor-pointer ${tc.hover} ${tc.subtext}`}>
                 <X className="w-4 h-4" />
               </button>
             </div>

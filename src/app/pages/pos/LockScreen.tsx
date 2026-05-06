@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router";
 import { Lock, LogOut } from "lucide-react";
 
 export default function LockScreen() {
+ const { t } = useTranslation();
  const navigate = useNavigate();
  const location = useLocation();
  const state = location.state as { name?: string; username?: string } | null;
@@ -24,7 +26,7 @@ export default function LockScreen() {
  e.preventDefault();
  setError("");
  if (password.length < 6) {
- setError("Please enter your password (min 6 characters).");
+ setError(t("lockScreen.passwordMinError"));
  return;
  }
  setLoading(true);
@@ -54,12 +56,12 @@ export default function LockScreen() {
  {/* PIN form */}
  <form onSubmit={handleUnlock} className="w-full space-y-5">
  <div>
- <label className="text-[0.8125rem] text-gray-400 mb-1.5 block">Password</label>
+ <label className="text-[0.8125rem] text-gray-400 mb-1.5 block">{t("lockScreen.passwordLabel")}</label>
  <input
  type="password"
  value={password}
  onChange={(e) => setPassword(e.target.value)}
- placeholder="Enter your password"
+ placeholder={t("lockScreen.passwordPlaceholder")}
  autoComplete="current-password"
  className="w-full px-3.5 py-2.5 rounded-lg border border-gray-700 bg-[#1a1d25] text-gray-100 text-[0.875rem] placeholder:text-gray-600 outline-none focus:border-blue-500 transition-colors"
  />
@@ -83,7 +85,7 @@ export default function LockScreen() {
  ) : (
  <Lock className="w-4 h-4" />
  )}
- {loading ? "Unlocking..." : "Unlock"}
+ {loading ? t("lockScreen.unlocking") : t("lockScreen.unlock")}
  </button>
  </form>
 
@@ -92,7 +94,7 @@ export default function LockScreen() {
  onClick={() => navigate("/signin", { replace: true })}
  className="mt-6 flex items-center gap-2 text-[0.8125rem] text-gray-500 hover:text-gray-300 cursor-pointer transition-colors"
  >
- <LogOut className="w-4 h-4" /> Switch Account
+ <LogOut className="w-4 h-4" /> {t("lockScreen.switchAccount")}
  </button>
  </div>
  </div>

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Menu, Save, X, ChevronRight, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useTranslation } from "react-i18next";
 import { useTheme, useThemeClasses } from "../theme-context";
 import { GROUPS } from "./data";
 import { GeneralSettings } from "./GeneralSettings";
@@ -11,7 +12,11 @@ import { StaffSettings } from "./StaffSettings";
 import { UpgradePlans } from "./UpgradePlans";
 
 function SettingsInner() {
+  const { t, i18n } = useTranslation("settings");
   const tc = useThemeClasses();
+  const resolvedLng = i18n.resolvedLanguage ?? i18n.language;
+  const isKo = resolvedLng.startsWith("ko");
+  const isEn = resolvedLng.startsWith("en");
   const { isDark, role } = useTheme();
   const isAdmin = role === "Admin";
   const canManageMenu = isAdmin || role === "Cashier";
@@ -50,8 +55,8 @@ function SettingsInner() {
         >
           <g.icon className="w-4 h-4 shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-[0.8125rem] truncate">{g.label}</p>
-            <p className="text-[0.625rem] opacity-60 truncate">{g.description}</p>
+            <p className="text-[0.8125rem] truncate">{t(`groups.${g.id}.label`)}</p>
+            <p className="text-[0.625rem] opacity-60 truncate">{t(`groups.${g.id}.description`)}</p>
           </div>
           <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-40" />
         </button>
@@ -75,7 +80,7 @@ function SettingsInner() {
               <Menu className="w-5 h-5" />
             </button>
           )}
-          <h1 className={`text-[1.125rem] ${tc.heading}`}>Settings</h1>
+          <h1 className={`text-[1.125rem] ${tc.heading}`}>{t("title")}</h1>
           {!isAdmin && (
             <span
               className="flex items-center gap-1 text-[0.6875rem] px-2 py-0.5 rounded-md ml-2"
@@ -85,15 +90,44 @@ function SettingsInner() {
               }}
             >
               <Lock className="w-3 h-3" />
-              Password Only
+              {t("passwordOnly")}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={handleSave} className="flex items-center gap-1.5 px-3.5 py-1.5 text-[0.75rem] rounded-lg bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-colors">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <div
+            className="flex items-center rounded-lg overflow-hidden border"
+            style={{ borderColor: isDark ? "rgba(75,85,99,0.6)" : "#e5e7eb" }}
+            role="group"
+            aria-label={t("language")}
+          >
+            <button
+              type="button"
+              onClick={() => void i18n.changeLanguage("ko")}
+              title={t("languageKo")}
+              className={`px-2.5 sm:px-3 py-1.5 text-[0.6875rem] sm:text-[0.75rem] font-medium cursor-pointer transition-colors ${
+                isKo ? "bg-blue-600 text-white" : `${tc.isDark ? "text-gray-400 hover:bg-gray-800" : "text-gray-600 hover:bg-gray-100"}`
+              }`}
+              aria-pressed={isKo}
+            >
+              KO
+            </button>
+            <button
+              type="button"
+              onClick={() => void i18n.changeLanguage("en")}
+              title={t("languageEn")}
+              className={`px-2.5 sm:px-3 py-1.5 text-[0.6875rem] sm:text-[0.75rem] font-medium cursor-pointer transition-colors border-l ${
+                isEn ? "bg-blue-600 text-white border-blue-600" : `${tc.isDark ? "text-gray-400 hover:bg-gray-800 border-gray-600" : "text-gray-600 hover:bg-gray-100 border-gray-200"}`
+              }`}
+              aria-pressed={isEn}
+            >
+              EN
+            </button>
+          </div>
+{/*           <button onClick={handleSave} className="flex items-center gap-1.5 px-3.5 py-1.5 text-[0.75rem] rounded-lg bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-colors">
             <Save className="w-4 h-4" />
-            {saved ? "Saved!" : "Save Changes"}
-          </button>
+            {saved ? t("saved") : t("saveChanges")}
+          </button>*/}
         </div>
       </div>
 
@@ -120,7 +154,7 @@ function SettingsInner() {
                     className={`fixed top-0 left-0 bottom-0 z-50 w-72 ${tc.drawerBg} border-r p-4 lg:hidden`}
                   >
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className={`text-[1rem] ${tc.heading}`}>Settings</h2>
+                      <h2 className={`text-[1rem] ${tc.heading}`}>{t("title")}</h2>
                       <button onClick={() => setDrawerOpen(false)} className={`p-1.5 rounded-lg ${tc.hover} cursor-pointer ${tc.subtext}`}>
                         <X className="w-4 h-4" />
                       </button>

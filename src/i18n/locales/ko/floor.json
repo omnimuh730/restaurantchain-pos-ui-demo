@@ -1,0 +1,91 @@
+{
+  "views": {
+    "floor": "식탁관리 보기",
+    "table": "식탁 보기",
+    "calendar": "캘린더 보기"
+  },
+  "mock": {
+    "hall": "홀",
+    "lounge": "라운지",
+    "tableLabel": "식탁 {{n}}"
+  },
+  "tabs": {
+    "addFloor": "층 추가",
+    "editLayout": "평면도 편집",
+    "removeFloor": "층 삭제",
+    "floorOptionsAria": "층 옵션",
+    "floorOptionsTitle": "층 옵션",
+    "doubleClickRename": "더블 클릭하여 이름 변경"
+  },
+  "addFloorModal": {
+    "title": "층 추가",
+    "hint": "새 층의 이름을 입력하여야 합니다.",
+    "placeholder": "층 이름",
+    "cancel": "취소",
+    "add": "추가"
+  },
+  "removeFloorModal": {
+    "title": "층 삭제",
+    "confirm": "「{{name}}」 층을 삭제할까요? 이 층의 모든 식탁이 제거됩니다.",
+    "cancel": "취소",
+    "delete": "삭제"
+  },
+  "edit": {
+    "addTable": "식탁 추가",
+    "seats": "좌석",
+    "shape": "모양",
+    "size": "크기",
+    "copy": "복사",
+    "delete": "삭제",
+    "copySuffix": "복사",
+    "showSeats": "좌석 표시",
+    "undo": "실행 취소",
+    "redo": "다시 실행",
+    "save": "저장",
+    "tapTableHint": "편집할 식탁을 탭하세요",
+    "renameFloorTitle": "클릭하여 이름 변경"
+  },
+  "canvas": {
+    "reserved": "예약",
+    "zoomPercent": "{{pct}}%"
+  },
+  "tableCard": {
+    "seats": "좌석",
+    "seatsCount": "{{occupied}}/{{total}}석",
+    "seatsTotal": "{{n}}석"
+  },
+  "notify": {
+    "tag": "식탁관리 플랜",
+    "newRequestTitle": "새 예약 요청",
+    "newRequestDesc": "{{guest}} · {{count}}명",
+    "canceledTitle": "예약 취소",
+    "canceledDesc": "{{guest}}님이 취소했습니다",
+    "timeUpdatedTitle": "예약 시간 변경",
+    "timeUpdatedDesc": "{{guest}} · {{time}}(으)로 변경",
+    "dismissAria": "닫기"
+  },
+  "drawer": {
+    "seatCount": "{{n}}석",
+    "seats": "좌석",
+    "minutes": "{{n}}분",
+    "occupied": "사용 중",
+    "reserved": "예약",
+    "guest": "고객",
+    "time": "시간",
+    "partySize": "인원",
+    "partyShort": "{{n}}명",
+    "reservationQr": "예약 QR",
+    "qrHint": "체크인 시 이 코드를 보여 주세요.",
+    "paymentTotal": "결제 합계",
+    "seatGuest": "고객 착석",
+    "checkIn": "체크인",
+    "cancel": "취소",
+    "closeAria": "닫기",
+    "moreOptionsAria": "더보기",
+    "reservedLine": "예약 · {{time}}",
+    "noActiveOrders": "진행 중인 주문이 없습니다",
+    "qrScanHint": "예약 확인 또는 체크인을 위해 스캔하세요.",
+    "orderTotal": "주문 합계 ({{count}}개)",
+    "payment": "결제"
+  }
+}

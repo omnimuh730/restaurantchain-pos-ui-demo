@@ -5,9 +5,11 @@ import {
   Trash2,
   Edit3,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useTheme, useThemeClasses } from "../theme-context";
 import { useColors } from "./useColors";
 import type { Floor } from "./types";
+import { formatFloorDisplayName } from "./floorI18n";
 
 export function FloorTabsRow({
   floors,
@@ -28,6 +30,7 @@ export function FloorTabsRow({
   showSeats?: boolean;
   setShowSeats?: (v: boolean) => void;
 }) {
+  const { t } = useTranslation("floor");
   const C = useColors();
   const tc = useThemeClasses();
   const { role } = useTheme();
@@ -144,9 +147,9 @@ export function FloorTabsRow({
                 setRenameVal(f.name);
               }}
               className={`shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-[14px] cursor-pointer transition-colors border-b-2 ${isActive ? `border-blue-500 ${tc.isDark ? "text-blue-400" : "text-slate-800"}` : `border-transparent ${tc.muted} ${tc.hover}`}`}
-              title="Double-click to rename"
+              title={t("tabs.doubleClickRename")}
             >
-              {f.name}
+              {formatFloorDisplayName(f.name, t)}
               <span
                 className={`min-w-[1.25rem] h-5 px-1.5 rounded text-[0.6875rem] flex items-center justify-center ${
                   isActive
@@ -167,8 +170,8 @@ export function FloorTabsRow({
         <div className="relative shrink-0" ref={menuWrapRef}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            aria-label="Floor options"
-            title="Floor options"
+            aria-label={t("tabs.floorOptionsAria")}
+            title={t("tabs.floorOptionsTitle")}
             className="flex items-center justify-center w-9 h-9 rounded-full cursor-pointer transition-all hover:scale-105 active:scale-95"
           >
             <MoreVertical
@@ -193,7 +196,7 @@ export function FloorTabsRow({
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:opacity-80 cursor-pointer"
                 style={{ color: C.text1 }}
               >
-                <Plus size={16} /> Add Floor
+                <Plus size={16} /> {t("tabs.addFloor")}
               </button>
               <button
                 onClick={() => {
@@ -203,7 +206,7 @@ export function FloorTabsRow({
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:opacity-80 cursor-pointer"
                 style={{ color: C.text1 }}
               >
-                <Edit3 size={16} /> Edit Layout
+                <Edit3 size={16} /> {t("tabs.editLayout")}
               </button>
               <button
                 onClick={() => {
@@ -214,7 +217,7 @@ export function FloorTabsRow({
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:opacity-80 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ color: "#ef4444" }}
               >
-                <Trash2 size={16} /> Remove Floor
+                <Trash2 size={16} /> {t("tabs.removeFloor")}
               </button>
             </div>
           )}
@@ -233,13 +236,13 @@ export function FloorTabsRow({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-base font-semibold mb-1">
-              Add Floor
+              {t("addFloorModal.title")}
             </div>
             <div
               className="text-sm mb-4"
               style={{ color: C.text2 }}
             >
-              Enter a name for the new floor.
+              {t("addFloorModal.hint")}
             </div>
             <input
               autoFocus
@@ -251,7 +254,7 @@ export function FloorTabsRow({
                   setAddOpen(false);
                 }
               }}
-              placeholder="Floor name"
+              placeholder={t("addFloorModal.placeholder")}
               className="w-full px-3 py-2 rounded border outline-none text-sm"
               style={{
                 background: C.bg,
@@ -269,7 +272,7 @@ export function FloorTabsRow({
                   border: `1px solid ${C.border}`,
                 }}
               >
-                Cancel
+                {t("addFloorModal.cancel")}
               </button>
               <button
                 disabled={!addName.trim()}
@@ -280,7 +283,7 @@ export function FloorTabsRow({
                 className="px-4 py-2 rounded text-sm cursor-pointer hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ background: C.primary, color: "#fff" }}
               >
-                Add
+                {t("addFloorModal.add")}
               </button>
             </div>
           </div>
@@ -299,20 +302,15 @@ export function FloorTabsRow({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-base font-semibold mb-1">
-              Remove Floor
+              {t("removeFloorModal.title")}
             </div>
             <div
               className="text-sm mb-5"
               style={{ color: C.text2 }}
             >
-              Are you sure you want to delete{" "}
-              <span style={{ color: C.text1, fontWeight: 600 }}>
-                {
-                  floors.find((f) => f.id === activeFloorId)
-                    ?.name
-                }
-              </span>
-              ? This will remove all tables on this floor.
+              {t("removeFloorModal.confirm", {
+                name: formatFloorDisplayName(floors.find((f) => f.id === activeFloorId)?.name ?? "", t),
+              })}
             </div>
             <div className="flex justify-end gap-2">
               <button
@@ -324,7 +322,7 @@ export function FloorTabsRow({
                   border: `1px solid ${C.border}`,
                 }}
               >
-                Cancel
+                {t("removeFloorModal.cancel")}
               </button>
               <button
                 onClick={() => {
@@ -334,7 +332,7 @@ export function FloorTabsRow({
                 className="px-4 py-2 rounded text-sm cursor-pointer hover:opacity-80"
                 style={{ background: "#ef4444", color: "#fff" }}
               >
-                Delete
+                {t("removeFloorModal.delete")}
               </button>
             </div>
           </div>

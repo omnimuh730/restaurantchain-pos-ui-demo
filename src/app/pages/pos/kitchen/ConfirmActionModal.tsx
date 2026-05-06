@@ -1,6 +1,8 @@
 import { Check, Minus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 import type { KitchenOrderItem } from "./types";
+import { useKitchenLabels } from "./useKitchenLabels";
 
 interface ConfirmActionModalProps {
   action: "complete" | "recall" | "accept";
@@ -9,14 +11,17 @@ interface ConfirmActionModalProps {
   onCancel: () => void;
 }
 
-const ACTION_COPY = {
-  complete: { title: "Complete Items?", desc: "The following items will be marked as completed:", btn: "Complete" },
-  recall: { title: "Recall Items?", desc: "The following items will be sent back to kitchen:", btn: "Recall" },
-  accept: { title: "Accept Order?", desc: "The following items will be moved to In Progress:", btn: "Accept" },
+const ACTION_KEYS = {
+  complete: { title: "confirm.completeTitle", desc: "confirm.completeDesc", btn: "confirm.completeBtn" },
+  recall: { title: "confirm.recallTitle", desc: "confirm.recallDesc", btn: "confirm.recallBtn" },
+  accept: { title: "confirm.acceptTitle", desc: "confirm.acceptDesc", btn: "confirm.acceptBtn" },
 } as const;
 
 export function ConfirmActionModal({ action, items, onConfirm, onCancel }: ConfirmActionModalProps) {
   const tc = useThemeClasses();
+  const { t } = useTranslation("kitchen");
+  const { itemLabel, modifierLabel } = useKitchenLabels();
+  const keys = ACTION_KEYS[action];
 
   return (
     <div
@@ -27,13 +32,11 @@ export function ConfirmActionModal({ action, items, onConfirm, onCancel }: Confi
         className={`${tc.card} rounded-xl shadow-xl w-[90%] max-w-sm`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className={`p-5 border-b ${tc.border}`}>
-          <h3 className={`text-[1rem] ${tc.heading}`}>{ACTION_COPY[action].title}</h3>
-          <p className={`text-[0.75rem] ${tc.subtext} mt-1`}>{ACTION_COPY[action].desc}</p>
+          <h3 className={`text-[1rem] ${tc.heading}`}>{t(keys.title)}</h3>
+          <p className={`text-[0.75rem] ${tc.subtext} mt-1`}>{t(keys.desc)}</p>
         </div>
 
-        {/* Items list */}
         <div className="p-5 max-h-[40vh] overflow-y-auto space-y-1.5">
           {items.map((item) => (
             <div
@@ -53,23 +56,18 @@ export function ConfirmActionModal({ action, items, onConfirm, onCancel }: Confi
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className={`text-[0.8125rem] ${tc.text2}`}>
-                  {item.name}
-                </p>
-                {item.modifier && (
-                  <p className={`text-[0.625rem] ${tc.muted} mt-0.5`}>∟ {item.modifier}</p>
-                )}
+                <p className={`text-[0.8125rem] ${tc.text2}`}>{itemLabel(item.itemKey)}</p>
+                {item.modifierKey ? (
+                  <p className={`text-[0.625rem] ${tc.muted} mt-0.5`}>∟ {modifierLabel(item.modifierKey)}</p>
+                ) : null}
               </div>
               <span className={`text-[0.875rem] shrink-0 ${tc.text2}`}>
-                {item.selectedQty !== undefined && item.selectedQty < item.qty
-                  ? item.selectedQty
-                  : item.qty}
+                {item.selectedQty !== undefined && item.selectedQty < item.qty ? item.selectedQty : item.qty}
               </span>
             </div>
           ))}
         </div>
 
-        {/* Footer actions */}
         <div className={`p-5 border-t ${tc.border} flex gap-2`}>
           <button
             onClick={onCancel}
@@ -79,13 +77,13 @@ export function ConfirmActionModal({ action, items, onConfirm, onCancel }: Confi
                 : "border-slate-300 text-slate-500 hover:bg-slate-50"
             }`}
           >
-            Cancel
+            {t("confirm.cancel")}
           </button>
           <button
             onClick={onConfirm}
             className="flex-1 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[0.8125rem] cursor-pointer transition-colors"
           >
-            {ACTION_COPY[action].btn}
+            {t(keys.btn)}
           </button>
         </div>
       </div>

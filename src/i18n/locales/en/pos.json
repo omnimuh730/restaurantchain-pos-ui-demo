@@ -1,0 +1,22 @@
+{
+  "brandName": "Glass Onion",
+  "brandSubtitle": "POS System",
+  "nav": {
+    "analytics": "Analytics",
+    "floor-plan": "Floor Plan",
+    "orders": "Orders",
+    "kitchen": "Kitchen",
+    "settings": "Settings"
+  },
+  "roles": {
+    "Admin": "Admin",
+    "Cashier": "Cashier",
+    "Chef": "Chef",
+    "Waiter": "Waiter"
+  },
+  "switchRole": "Switch Role",
+  "pageCount": "{{count}} screens",
+  "lockScreen": "Lock screen",
+  "themeLight": "Switch to light mode",
+  "themeDark": "Switch to dark mode"
+}

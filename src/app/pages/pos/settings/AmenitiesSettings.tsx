@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 import { AMENITIES, CUISINES, OCCASIONS, SEATING_PREFERENCES } from "./data";
 
@@ -14,6 +15,7 @@ interface OptionSectionProps {
 }
 
 function OptionSection({ title, description, items, enabled, toggle }: OptionSectionProps) {
+  const { t } = useTranslation("settings");
   const tc = useThemeClasses();
   const enabledCount = items.filter((i) => enabled[i.id]).length;
 
@@ -25,7 +27,7 @@ function OptionSection({ title, description, items, enabled, toggle }: OptionSec
             <h3 className={`text-[0.9375rem] ${tc.heading}`}>{title}</h3>
             <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>{description}</p>
           </div>
-          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-600/20 text-blue-400 text-[0.6875rem] shrink-0">{enabledCount} active</span>
+          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-600/20 text-blue-400 text-[0.6875rem] shrink-0">{t("amenitiesPage.activeCount", { count: enabledCount })}</span>
         </div>
       </div>
       <div className="p-3 sm:p-5">
@@ -62,6 +64,16 @@ function OptionSection({ title, description, items, enabled, toggle }: OptionSec
 }
 
 export function AmenitiesSettings() {
+  const { t } = useTranslation("settings");
+  const mapAmenityItems = (items: typeof AMENITIES) =>
+    items.map((a) => ({ ...a, label: t(`itemLabels.amenities.${a.id}`) }));
+  const mapCuisineItems = (items: typeof CUISINES) =>
+    items.map((a) => ({ ...a, label: t(`itemLabels.cuisines.${a.id}`) }));
+  const mapOccasionItems = (items: typeof OCCASIONS) =>
+    items.map((a) => ({ ...a, label: t(`itemLabels.occasions.${a.id}`) }));
+  const mapSeatingItems = (items: typeof SEATING_PREFERENCES) =>
+    items.map((a) => ({ ...a, label: t(`itemLabels.seating.${a.id}`) }));
+
   const [amenityEnabled, setAmenityEnabled] = useState<Record<string, boolean>>({
     parking: true, wifi: true, "credit-cards": true, cash: true, "mobile-pay": true,
     "high-chairs": true, "kids-menu": true, reservations: true, "walk-ins": true,
@@ -83,30 +95,30 @@ export function AmenitiesSettings() {
   return (
     <div className="space-y-4">
       <OptionSection
-        title="Amenities & Services"
-        description="Toggle features and services your restaurant offers"
-        items={AMENITIES}
+        title={t("amenitiesPage.amenitiesTitle")}
+        description={t("amenitiesPage.amenitiesDesc")}
+        items={mapAmenityItems(AMENITIES)}
         enabled={amenityEnabled}
         toggle={makeToggle(setAmenityEnabled)}
       />
       <OptionSection
-        title="Cuisine"
-        description="Select the cuisine types your restaurant serves"
-        items={CUISINES}
+        title={t("amenitiesPage.cuisineTitle")}
+        description={t("amenitiesPage.cuisineDesc")}
+        items={mapCuisineItems(CUISINES)}
         enabled={cuisineEnabled}
         toggle={makeToggle(setCuisineEnabled)}
       />
       <OptionSection
-        title="Occasion & Vibe"
-        description="Highlight the occasions and vibes your restaurant fits best"
-        items={OCCASIONS}
+        title={t("amenitiesPage.occasionTitle")}
+        description={t("amenitiesPage.occasionDesc")}
+        items={mapOccasionItems(OCCASIONS)}
         enabled={occasionEnabled}
         toggle={makeToggle(setOccasionEnabled)}
       />
       <OptionSection
-        title="Seating Preference"
-        description="Seating options available to your guests"
-        items={SEATING_PREFERENCES}
+        title={t("amenitiesPage.seatingTitle")}
+        description={t("amenitiesPage.seatingDesc")}
+        items={mapSeatingItems(SEATING_PREFERENCES)}
         enabled={seatingEnabled}
         toggle={makeToggle(setSeatingEnabled)}
       />

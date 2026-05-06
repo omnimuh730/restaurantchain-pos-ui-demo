@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarRange, LayoutGrid, TableProperties } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useColors, useIsMobile } from "./useColors";
 import { useTheme } from "../theme-context";
 import { INITIAL_FLOORS, SAMPLE_RESERVATIONS } from "./data";
@@ -14,6 +15,7 @@ import { CalendarView } from "./CalendarView";
 import { useNavBadges } from "../NavBadgeContext";
 
 export default function FloorPlan() {
+  const { t: tf } = useTranslation("floor");
   const C = useColors();
   const { isDark, role } = useTheme();
   const isMobile = useIsMobile();
@@ -96,7 +98,7 @@ export default function FloorPlan() {
     const num = tables.length + 1;
     const sx = Math.round((80 + Math.random() * 200) / SNAP_GRID) * SNAP_GRID;
     const sy = Math.round((80 + Math.random() * 200) / SNAP_GRID) * SNAP_GRID;
-    const t: Table = { id: `T${Date.now()}`, label: `Table ${num}`, seats: 4, shape: "rect", x: sx, y: sy, width: BASE_W, height: BASE_H, status: "available" };
+    const t: Table = { id: `T${Date.now()}`, label: tf("mock.tableLabel", { n: String(num) }), seats: 4, shape: "rect", x: sx, y: sy, width: BASE_W, height: BASE_H, status: "available" };
     updateTables([...tables, t]);
     setSelectedTable(t.id);
   };
@@ -189,13 +191,13 @@ export default function FloorPlan() {
         <div />
         <div className="flex gap-1 rounded-lg justify-self-center" style={{ background: C.raised }}>
           <button onClick={() => setViewMode("floor")} className="flex items-center gap-2 px-4 py-2 rounded transition-all cursor-pointer text-sm whitespace-nowrap" style={{ background: viewMode === "floor" ? C.primary : "transparent", color: viewMode === "floor" ? "#ffffff" : C.text2 }}>
-            <LayoutGrid size={20} /><span className="hidden sm:inline">Floor View</span>
+            <LayoutGrid size={20} /><span className="hidden sm:inline">{tf("views.floor")}</span>
           </button>
           <button onClick={() => setViewMode("table")} className="flex items-center gap-2 px-4 py-2 rounded transition-all cursor-pointer text-sm whitespace-nowrap" style={{ background: viewMode === "table" ? C.primary : "transparent", color: viewMode === "table" ? "#ffffff" : C.text2 }}>
-            <TableProperties size={20} /><span className="hidden sm:inline">Table View</span>
+            <TableProperties size={20} /><span className="hidden sm:inline">{tf("views.table")}</span>
           </button>
           <button onClick={() => setViewMode("calendar")} className="flex items-center gap-2 px-4 py-2 rounded transition-all cursor-pointer text-sm whitespace-nowrap" style={{ background: viewMode === "calendar" ? C.primary : "transparent", color: viewMode === "calendar" ? "#ffffff" : C.text2 }}>
-            <CalendarRange size={20} /><span className="hidden sm:inline">Calendar View</span>
+            <CalendarRange size={20} /><span className="hidden sm:inline">{tf("views.calendar")}</span>
           </button>
         </div>
         <div />

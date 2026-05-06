@@ -1,5 +1,7 @@
 import { X, Minus, Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
+import { formatDomesticWon, formatForeignUsd } from "../../../../i18n/formatMoney";
 
 export type RowCurrency = "foreign" | "domestic";
 
@@ -22,9 +24,8 @@ interface OrderItemsTableProps {
 }
 
 function fmt(value: number, cur: RowCurrency): string {
-  if (cur === "domestic")
-    return `₩${Math.round(value).toLocaleString()}`;
-  return `$${value.toFixed(2)}`;
+  if (cur === "domestic") return formatDomesticWon(value);
+  return formatForeignUsd(value);
 }
 
 export function OrderItemsTable({
@@ -36,6 +37,7 @@ export function OrderItemsTable({
   emptyLabel,
 }: OrderItemsTableProps) {
   const tc = useThemeClasses();
+  const { t } = useTranslation("orders");
   const interactive = !!(onQtySet || onRemove);
 
   if (items.length === 0 && emptyLabel) {
@@ -101,7 +103,7 @@ export function OrderItemsTable({
                     ? "bg-slate-800/60 text-slate-200 hover:bg-slate-700"
                     : "bg-white/80 text-slate-700 border border-slate-200 hover:bg-slate-100"
                 }`}
-                aria-label="Decrease quantity"
+                aria-label={t("ui.ariaDecQty")}
               >
                 <Minus className="w-3 h-3" />
               </button>
@@ -119,7 +121,7 @@ export function OrderItemsTable({
                     ? "bg-slate-800/60 text-slate-200 hover:bg-slate-700"
                     : "bg-white/80 text-slate-700 border border-slate-200 hover:bg-slate-100"
                 }`}
-                aria-label="Increase quantity"
+                aria-label={t("ui.ariaIncQty")}
               >
                 <Plus className="w-3 h-3" />
               </button>
@@ -163,10 +165,10 @@ export function OrderItemsTable({
       <div
         className={`${stickyHeader ? "sticky top-0 z-10" : ""} ${tc.isDark ? "bg-[#2a2d35]" : "bg-white"} px-3 py-1.5 flex items-center gap-1.5 text-[0.6875rem] sm:text-[0.8125rem] ${tc.isDark ? "text-blue-400" : "text-blue-600"} border-b ${tc.borderHalf}`}
       >
-        <div className="flex-1">Name</div>
-        <div className="w-16 md:w-18 text-center">Qty</div>
-        <div className="w-16 md:w-20 text-right">Each</div>
-        <div className="w-16 md:w-20 text-right">Total</div>
+        <div className="flex-1">{t("ui.panel.historyColItem")}</div>
+        <div className="w-16 md:w-18 text-center">{t("ui.panel.historyColQty")}</div>
+        <div className="w-16 md:w-20 text-right">{t("ui.panel.historyColEach")}</div>
+        <div className="w-16 md:w-20 text-right">{t("ui.panel.historyColLine")}</div>
         {interactive && <div className="w-5" />}
       </div>
       <div>
@@ -181,7 +183,7 @@ export function OrderItemsTable({
               <span
                 className={`text-[0.625rem] uppercase tracking-wider ${tc.isDark ? "text-blue-400" : "text-blue-500"}`}
               >
-                New Items
+                {t("ui.newItemsDivider")}
               </span>
               <div
                 className={`flex-1 h-px ${tc.isDark ? "bg-slate-600" : "bg-slate-200"}`}

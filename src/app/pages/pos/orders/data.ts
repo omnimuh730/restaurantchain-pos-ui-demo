@@ -254,7 +254,8 @@ export const TABLES = [
 export interface OrderItem {
   id: string;
   baseId: string;
-  name: string;
+  /** @deprecated Resolved via i18n `orders:items.${baseId}` */
+  name?: string;
   price: number;
   qty: number;
   category: string;
@@ -267,9 +268,27 @@ export interface OrderItem {
 
 export const INITIAL_TABLE_ORDERS: Record<string, OrderItem[]> = {
   T12: [
-    { id: "lychee-martini", baseId: "lychee-martini", name: "Lychee Martini", price: 12.00, qty: 2, category: "COCKTAILS", ordered: true, currency: "foreign" },
-    { id: "wings", baseId: "wings", name: "Chicken Wings", price: 12.00, qty: 1, category: "APPETIZERS", ordered: true, currency: "foreign" },
-    { id: "grilled-salmon", baseId: "grilled-salmon", name: "Grilled Salmon", price: 20.00, qty: 1, category: "GRILLED BBQ", modifiers: ["NO Garlic", "Side Asparagus"], ordered: true, currency: "foreign" },
-    { id: "bulgogi", baseId: "bulgogi", name: "Bulgogi", price: 18000, qty: 1, category: "GRILLED BBQ", modifiers: ["Medium Rare"], ordered: true, currency: "domestic" },
+    { id: "lychee-martini", baseId: "lychee-martini", price: 12.0, qty: 2, category: "COCKTAILS", ordered: true, currency: "foreign" },
+    { id: "wings", baseId: "wings", price: 12.0, qty: 1, category: "APPETIZERS", ordered: true, currency: "foreign" },
+    {
+      id: "grilled-salmon",
+      baseId: "grilled-salmon",
+      price: 20.0,
+      qty: 1,
+      category: "GRILLED BBQ",
+      modifiers: ["no_garlic", "side_asparagus"],
+      ordered: true,
+      currency: "foreign",
+    },
+    {
+      id: "bulgogi",
+      baseId: "bulgogi",
+      price: 18000,
+      qty: 1,
+      category: "GRILLED BBQ",
+      modifiers: ["medium_rare"],
+      ordered: true,
+      currency: "domestic",
+    },
   ],
 };

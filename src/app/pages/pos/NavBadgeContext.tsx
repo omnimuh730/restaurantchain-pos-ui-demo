@@ -1,14 +1,16 @@
 import { createContext, useContext, useState, useMemo, useCallback, useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
 import { BellRing, CalendarCheck, ChefHat, X as XIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import i18n from "../../../i18n/config";
 import { useTheme } from "./theme-context";
 import { SAMPLE_RESERVATIONS } from "./floor-plan/data";
 import { INITIAL_ORDERS } from "./kitchen/data";
 
 type ToastKind = "floor";
 
-const TOAST_ICON: Record<ToastKind, { Icon: typeof BellRing; tag: string }> = {
-  floor: { Icon: CalendarCheck, tag: "Floor Plan" },
+const TOAST_ICON: Record<ToastKind, { Icon: typeof BellRing }> = {
+  floor: { Icon: CalendarCheck },
 };
 
 const TOAST_GRAD: Record<ToastKind, string> = {
@@ -17,12 +19,15 @@ const TOAST_GRAD: Record<ToastKind, string> = {
 void ChefHat;
 
 function fmtNow() {
-  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const lng = i18n.language?.startsWith("ko") ? "ko-KR" : "en-US";
+  return new Date().toLocaleTimeString(lng, { hour: "2-digit", minute: "2-digit" });
 }
 
 function RichToast({ kind, title, desc, t }: { kind: ToastKind; title: string; desc?: string; t: string | number }) {
   const { isDark } = useTheme();
-  const { Icon, tag } = TOAST_ICON[kind];
+  const { t: tr } = useTranslation("floor");
+  const { Icon } = TOAST_ICON[kind];
+  const tag = tr("notify.tag");
   const grad = TOAST_GRAD[kind];
 
   const bg = isDark
@@ -61,7 +66,7 @@ function RichToast({ kind, title, desc, t }: { kind: ToastKind; title: string; d
           className={`shrink-0 w-6 h-6 rounded-md flex items-center justify-center cursor-pointer transition-colors ${
             isDark ? "text-slate-500 hover:text-slate-200 hover:bg-white/5" : "text-slate-400 hover:text-slate-700 hover:bg-slate-100"
           }`}
-          aria-label="Dismiss"
+          aria-label={tr("notify.dismissAria")}
         >
           <XIcon className="w-3.5 h-3.5" />
         </button>
@@ -129,17 +134,22 @@ export function NavBadgeProvider({ children }: { children: ReactNode }) {
       const guest = SAMPLE_RESERVATION_GUESTS[Math.floor(Math.random() * SAMPLE_RESERVATION_GUESTS.length)];
       const party = 2 + Math.floor(Math.random() * 5);
       const event = Math.random();
-      let title = "New reservation request";
-      let desc = `${guest} · ${party} guests`;
+      let title: string;
+      let desc: string;
+      let bumpRequestBadge = false;
       if (event < 0.34) {
-        title = "Reservation canceled";
-        desc = `${guest} canceled`;
+        title = i18n.t("notify.canceledTitle", { ns: "floor" });
+        desc = i18n.t("notify.canceledDesc", { ns: "floor", guest });
       } else if (event < 0.67) {
         const newTime = `${5 + Math.floor(Math.random() * 4)}:${Math.random() < 0.5 ? "00" : "30"} PM`;
-        title = "Reservation time updated";
-        desc = `${guest} · moved to ${newTime}`;
+        title = i18n.t("notify.timeUpdatedTitle", { ns: "floor" });
+        desc = i18n.t("notify.timeUpdatedDesc", { ns: "floor", guest, time: newTime });
+      } else {
+        title = i18n.t("notify.newRequestTitle", { ns: "floor" });
+        desc = i18n.t("notify.newRequestDesc", { ns: "floor", guest, count: party });
+        bumpRequestBadge = true;
       }
-      if (title === "New reservation request") {
+      if (bumpRequestBadge) {
         setBadges((prev) => ({ ...prev, "": (prev[""] ?? 0) + 1 }));
       }
       if (prefs.floor && notifiableRole) {

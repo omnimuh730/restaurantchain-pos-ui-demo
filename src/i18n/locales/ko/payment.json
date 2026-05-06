@@ -1,0 +1,44 @@
+{
+  "title": "결제",
+  "back": "뒤로",
+  "cashAlt": "현금결제 결제",
+  "methods": {
+    "cash": "현금결제",
+    "credit": "전자결제",
+    "mix": "분할결제"
+  },
+  "cardNumber": "카드 번호",
+  "password": "비밀번호",
+  "proceed": "진행",
+  "swipeToCard": "카드 결제로 이동",
+  "swipeToQr": "QR로 이동",
+  "qrView": "QR 보기",
+  "manualEntry": "수동 입력",
+  "cashCol": "현금결제",
+  "creditCol": "전자결제",
+  "domestic": "내화",
+  "foreign": "외화",
+  "mixMustEqualKrw": "현금결제+카드 합계가 {{amount}}와 같아야 합니다",
+  "mixMustEqualUsd": "현금결제+카드 합계가 {{amount}}와 같아야 합니다",
+  "confirmPayment": "결제 확인",
+  "paymentComplete": "결제 완료",
+  "done": "완료",
+  "cash": "현금결제",
+  "credit": "전자결제",
+  "cardPayment": "카드 결제",
+  "paymentFailed": "결제 실패",
+  "close": "닫기",
+  "processingSteps": [
+    "카드 번호 확인 중…",
+    "비밀번호 확인 중…",
+    "잔액 확인 중…",
+    "결제 승인 중…",
+    "결제가 승인되었습니다"
+  ],
+  "errors": {
+    "card": "카드 번호를 인식할 수 없습니다. 다시 확인해 주세요.",
+    "pwd": "비밀번호가 올바르지 않습니다. 다시 시도해 주세요.",
+    "balance": "이 카드의 잔액이 부족합니다."
+  },
+  "zeroUsd": "$0.00"
+}

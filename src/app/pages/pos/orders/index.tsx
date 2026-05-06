@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, lazy, Suspense, startTransition } from "react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 import { INITIAL_TABLE_ORDERS, TABLES } from "./data";
 import type { OrderItem } from "./data";
@@ -8,6 +9,7 @@ import { MenuPanel } from "./MenuPanel";
 const PaymentPage = lazy(() => import("../payment"));
 
 export default function Orders() {
+  const { t } = useTranslation("orders");
   const [selectedMainCategory, setSelectedMainCategory] = useState<string>("hot-foods");
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -71,9 +73,22 @@ export default function Orders() {
       if (existingNew) {
         return prev.map((i) => (i.id === existingNew.id ? { ...i, qty: i.qty + 1 } : i));
       }
-      const categoryLabel = selectedSubCategory?.toUpperCase().replace(/-/g, " ") || "UNKNOWN";
+      const categoryLabel = selectedSubCategory
+        ? t(`subcategories.${selectedSubCategory}`)
+        : t(`categoriesMain.${selectedMainCategory}`);
       const uniqueId = `${item.id}-${Date.now()}`;
-      return [...prev, { ...item, id: uniqueId, baseId: item.id, qty: 1, category: categoryLabel, ordered: false, currency: item.currency ?? "foreign" }];
+      return [
+        ...prev,
+        {
+          id: uniqueId,
+          baseId: item.id,
+          price: item.price,
+          qty: 1,
+          category: categoryLabel,
+          ordered: false,
+          currency: item.currency ?? "foreign",
+        },
+      ];
     });
   };
 

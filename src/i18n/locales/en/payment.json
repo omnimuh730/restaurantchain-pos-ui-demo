@@ -1,0 +1,44 @@
+{
+  "title": "Payment",
+  "back": "Back",
+  "cashAlt": "Cash payment",
+  "methods": {
+    "cash": "Cash",
+    "credit": "Credit",
+    "mix": "Mix"
+  },
+  "cardNumber": "Card Number",
+  "password": "Password",
+  "proceed": "Proceed",
+  "swipeToCard": "Swipe to card payment",
+  "swipeToQr": "Swipe back to QR",
+  "qrView": "QR view",
+  "manualEntry": "Manual entry",
+  "cashCol": "Cash",
+  "creditCol": "Credit",
+  "domestic": "Domestic",
+  "foreign": "Foreign",
+  "mixMustEqualKrw": "Cash + credit must equal {{amount}}",
+  "mixMustEqualUsd": "Cash + credit must equal {{amount}}",
+  "confirmPayment": "Confirm Payment",
+  "paymentComplete": "Payment complete",
+  "done": "Done",
+  "cash": "Cash",
+  "credit": "Credit",
+  "cardPayment": "Card Payment",
+  "paymentFailed": "Payment Failed",
+  "close": "Close",
+  "processingSteps": [
+    "Verifying card number…",
+    "Verifying password…",
+    "Checking available balance…",
+    "Authorizing payment…",
+    "Payment approved"
+  ],
+  "errors": {
+    "card": "Card number not recognized. Please check the card number and try again.",
+    "pwd": "Incorrect password. Please try again.",
+    "balance": "Insufficient balance on this card."
+  },
+  "zeroUsd": "$0.00"
+}

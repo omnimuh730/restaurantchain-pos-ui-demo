@@ -1,9 +1,12 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useTheme } from "../theme-context";
 import { useColors } from "./useColors";
 import type { Table } from "./types";
 import { SNAP_GRID, CANVAS_W, CANVAS_H } from "./types";
+import { formatTableLabel } from "./floorI18n";
+import { formatDomesticWon } from "../../../../i18n/formatMoney";
 
 interface FloorCanvasProps {
   tables: Table[];
@@ -25,6 +28,7 @@ export function FloorCanvas({
   tables, editMode, selectedTable, setSelectedTable, showSeats, zoom, setZoom,
   onMouseDown, guides, addTable, isMobile, setMobileEditDrawerOpen, scrollRef,
 }: FloorCanvasProps) {
+  const { t: tr } = useTranslation("floor");
   const C = useColors();
   const { isDark } = useTheme();
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -137,7 +141,7 @@ export function FloorCanvas({
                     onMouseDown={(e) => onMouseDown(e, t.id)}
                   >
                     <span className="text-xs font-semibold pointer-events-none text-center" style={{ color: isSelected ? "#fff" : C.editText2 }}>
-                      {t.label}{showSeats && <span className="ml-1 opacity-60">({t.seats})</span>}
+                      {formatTableLabel(t.label, tr)}{showSeats && <span className="ml-1 opacity-60">({t.seats})</span>}
                     </span>
                   </div>
                 );
@@ -159,12 +163,12 @@ export function FloorCanvas({
                   }}
                   onClick={() => setSelectedTable(t.id)}
                 >
-                  <span className="text-center text-[14px]" style={{ color: isOcc ? "#fff" : C.editText1 }}>{t.label}</span>
+                  <span className="text-center text-[14px]" style={{ color: isOcc ? "#fff" : C.editText1 }}>{formatTableLabel(t.label, tr)}</span>
                   <span className="mt-0.5 text-center opacity-80 text-xs" style={{ color: isOcc ? "#fff" : C.editText2 }}>
                     {isOcc ? `${t.occupiedSeats ?? t.seats}/${t.seats}` : t.seats}
                   </span>
-                  {isOcc && t.revenue && <span className="mt-1 text-center text-[13px]" style={{ color: "#fff" }}>{"\u20A9"}{t.revenue.toLocaleString()}</span>}
-                  {isRes && <span className="mt-1 text-center" style={{ color: C.editText2, fontSize: 11 }}>Reserved {t.reservationTime}</span>}
+                  {isOcc && t.revenue && <span className="mt-1 text-center text-[13px]" style={{ color: "#fff" }}>{formatDomesticWon(t.revenue)}</span>}
+                  {isRes && <span className="mt-1 text-center" style={{ color: C.editText2, fontSize: 11 }}>{tr("canvas.reserved")} {t.reservationTime}</span>}
                 </div>
               );
             })}
@@ -177,12 +181,14 @@ export function FloorCanvas({
         className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg text-xs font-semibold select-none pointer-events-none"
         style={{ background: editMode ? "rgba(0,0,0,0.06)" : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"), color: editMode ? C.editText2 : C.text3 }}
       >
-        {Math.round(zoom * 100)}%
+        {tr("canvas.zoomPercent", { pct: Math.round(zoom * 100) })}
       </div>
 
       {/* Mobile FAB: Add Table */}
       {editMode && isMobile && (
         <button
+          type="button"
+          aria-label={tr("edit.addTable")}
           onClick={addTable}
           className="absolute bottom-16 right-4 z-20 w-12 h-12 rounded-full flex items-center justify-center shadow-lg cursor-pointer"
           style={{ background: "#3370E8", color: "#fff" }}

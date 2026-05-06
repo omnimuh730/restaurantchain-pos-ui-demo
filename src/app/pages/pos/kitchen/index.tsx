@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown, ArrowUpDown, AlertCircle, Filter, ClipboardList, ChefHat } from "lucide-react";
 import { useThemeClasses, useTheme } from "../theme-context";
 import type { KitchenOrder, OrderStatus, ViewTab, SortMode } from "./types";
@@ -12,6 +13,7 @@ const ALL_TABLES = KITCHEN_FLOORS.flatMap((f) => f.tables);
 
 export default function Kitchen() {
   const tc = useThemeClasses();
+  const { t } = useTranslation("kitchen");
   const { role } = useTheme();
   const isAdmin = role === "Admin";
   const [orders, setOrders] = useState<KitchenOrder[]>(INITIAL_ORDERS);
@@ -30,7 +32,7 @@ export default function Kitchen() {
   }, []);
 
   // Counts of distinct food types (cook types) per status, ignoring quantities.
-  const distinctNames = (items: { name: string }[]) => new Set(items.map((i) => i.name)).size;
+  const distinctNames = (items: { itemKey: string }[]) => new Set(items.map((i) => i.itemKey)).size;
   const receivedCount = distinctNames(
     orders.filter((o) => o.status === "received").flatMap((o) => o.items)
   );
@@ -256,10 +258,10 @@ export default function Kitchen() {
     orders.filter((o) => o.status === "completed").length +
     orders.filter((o) => o.status === "in-progress" && o.items.some((i) => i.previouslyCompleted)).length;
 
-  const TABS: { id: ViewTab; label: string; count: number; orderCount: number }[] = [
-    { id: "received", label: "Received", count: receivedCount, orderCount: receivedOrderCount },
-    { id: "in-progress", label: "In Progress", count: inProgressCount, orderCount: inProgressOrderCount },
-    { id: "completed", label: "Completed", count: completedCount, orderCount: completedOrderCount },
+  const TABS: { id: ViewTab; labelKey: string; count: number; orderCount: number }[] = [
+    { id: "received", labelKey: "index.tabReceived", count: receivedCount, orderCount: receivedOrderCount },
+    { id: "in-progress", labelKey: "index.tabInProgress", count: inProgressCount, orderCount: inProgressOrderCount },
+    { id: "completed", labelKey: "index.tabCompleted", count: completedCount, orderCount: completedOrderCount },
   ];
 
   return (
@@ -278,7 +280,7 @@ export default function Kitchen() {
               className={`md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer transition-colors ${ tc.isDark ? "bg-slate-700 hover:bg-slate-600 text-slate-200" : "bg-slate-100 hover:bg-slate-200 text-slate-700" } text-[0.8125rem] bg-[#2d59e2]`}
             >
               <Filter className="w-4 h-4" />
-              <span>Tables</span>
+              <span>{t("index.tablesBtn")}</span>
               <span className="text-[0.6875rem]">
                 {selectedTables.size}
               </span>
@@ -292,7 +294,7 @@ export default function Kitchen() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${tc.card} text-[0.6875rem] cursor-pointer ${tc.hover} transition-colors ${tc.subtext}`}
               >
                 <ArrowUpDown className="w-3.5 h-3.5" />
-                {sortMode === "oldest" ? "Oldest" : "Newest"}
+                {sortMode === "oldest" ? t("index.sortOldest") : t("index.sortNewest")}
                 <ChevronDown className="w-3 h-3" />
               </button>
               {showSortDropdown && (
@@ -307,7 +309,7 @@ export default function Kitchen() {
                           sortMode === s ? tc.dropdownItemActive : tc.dropdownItem
                         }`}
                       >
-                        {s === "oldest" ? "Oldest First" : "Newest First"}
+                        {s === "oldest" ? t("index.sortOldestFirst") : t("index.sortNewestFirst")}
                       </button>
                     ))}
                   </div>
@@ -329,7 +331,7 @@ export default function Kitchen() {
                   : `border-transparent ${tc.muted} ${tc.hover}`
               }`}
             >
-              <span>{tab.label}</span>
+              <span>{t(tab.labelKey)}</span>
               <span className={`flex items-center gap-2 text-[0.6875rem] ${
                 activeTab === tab.id
                   ? tc.isDark ? "text-blue-400" : "text-slate-600"
@@ -356,7 +358,7 @@ export default function Kitchen() {
         {sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-500">
             <AlertCircle className="w-10 h-10 mb-3 opacity-40" />
-            <p className="text-[0.875rem]">No orders in this category</p>
+            <p className="text-[0.875rem]">{t("index.emptyCategory")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap md:content-start md:items-start gap-3 pb-2 overflow-auto md:h-full">

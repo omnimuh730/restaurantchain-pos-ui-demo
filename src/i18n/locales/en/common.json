@@ -1,0 +1,14 @@
+{
+  "loading": "Loading…",
+  "clearAll": "Clear All",
+  "clearAllAria": "Clear all notifications",
+  "emDash": "—",
+  "lockScreen": {
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "unlock": "Unlock",
+    "unlocking": "Unlocking…",
+    "switchAccount": "Switch Account",
+    "passwordMinError": "Please enter your password (min 6 characters)."
+  }
+}

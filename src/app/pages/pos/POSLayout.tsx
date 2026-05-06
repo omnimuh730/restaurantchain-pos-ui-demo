@@ -1,4 +1,5 @@
 import { startTransition, useState, useRef, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Outlet, useLocation, useNavigate, useNavigation } from "react-router";
 import {
   FloorPlanSkeleton,
@@ -21,19 +22,21 @@ import {
   AnalyticsFilled, FloorPlanFilled, OrdersFilled, KitchenFilled, SettingsFilled,
 } from "./components/NavIcons";
 
-const NAV_ITEMS = [
-  { id: "analytics", label: "Analytics", icon: AnalyticsFilled },
-  { id: "floor-plan", label: "Floor Plan", icon: FloorPlanFilled },
-  { id: "orders", label: "Orders", icon: OrdersFilled },
-  { id: "kitchen", label: "Kitchen", icon: KitchenFilled },
-  { id: "settings", label: "Settings", icon: SettingsFilled },
-];
+const NAV_IDS = ["analytics", "floor-plan", "orders", "kitchen", "settings"] as const;
 
-const ROLE_OPTIONS: { role: ActiveRole; icon: typeof ShieldCheck; label: string }[] = [
-  { role: "Admin", icon: ShieldCheck, label: "Admin" },
-  { role: "Cashier", icon: Wallet, label: "Cashier" },
-  { role: "Chef", icon: ChefHat, label: "Chef" },
-  { role: "Waiter", icon: UserCheck, label: "Waiter" },
+const NAV_ICONS: Record<(typeof NAV_IDS)[number], typeof AnalyticsFilled> = {
+  analytics: AnalyticsFilled,
+  "floor-plan": FloorPlanFilled,
+  orders: OrdersFilled,
+  kitchen: KitchenFilled,
+  settings: SettingsFilled,
+};
+
+const ROLE_OPTIONS: { role: ActiveRole; icon: typeof ShieldCheck }[] = [
+  { role: "Admin", icon: ShieldCheck },
+  { role: "Cashier", icon: Wallet },
+  { role: "Chef", icon: ChefHat },
+  { role: "Waiter", icon: UserCheck },
 ];
 
 function RouteOutlet() {
@@ -55,6 +58,7 @@ function RouteOutlet() {
 }
 
 function POSLayoutInner() {
+  const { t } = useTranslation(["pos", "common"]);
   const location = useLocation();
   const navigate = useNavigate();
   const { isDark, toggle: toggleTheme, role: currentRole, setRole: setCurrentRole } = useTheme();
@@ -68,8 +72,13 @@ function POSLayoutInner() {
 
   // Filter nav items based on role
   const allowedNav = useMemo(
-    () => NAV_ITEMS.filter((item) => ROLE_NAV_ACCESS[currentRole].includes(item.id)),
-    [currentRole],
+    () =>
+      NAV_IDS.filter((id) => ROLE_NAV_ACCESS[currentRole].includes(id)).map((id) => ({
+        id,
+        label: t(`pos:nav.${id}`),
+        icon: NAV_ICONS[id],
+      })),
+    [currentRole, t],
   );
 
   // Redirect to first allowed page when role changes and current page isn't accessible
@@ -123,13 +132,13 @@ function POSLayoutInner() {
               className="text-[0.9375rem] tracking-tight"
               style={{ color: isDark ? "#e5e7eb" : "#1e293b" }}
             >
-              Glass Onion
+              {t("pos:brandName")}
             </span>
             <span
               className="text-[0.625rem] tracking-wider uppercase"
               style={{ color: isDark ? "#4A5463" : "#94a3b8" }}
             >
-              POS System
+              {t("pos:brandSubtitle")}
             </span>
           </div>
         </div>
@@ -144,7 +153,7 @@ function POSLayoutInner() {
               color: isDark ? "#9ca3af" : "#64748b",
               background: isDark ? "rgba(58,63,77,0.5)" : "rgba(241,245,249,1)",
             }}
-            title="Lock screen"
+            title={t("pos:lockScreen")}
           >
             <Lock className="w-5 h-5" />
           </button>
@@ -157,7 +166,7 @@ function POSLayoutInner() {
               color: isDark ? "#9ca3af" : "#64748b",
               background: isDark ? "rgba(58,63,77,0.5)" : "rgba(241,245,249,1)",
             }}
-            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            title={isDark ? t("pos:themeLight") : t("pos:themeDark")}
           >
             {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
@@ -181,7 +190,7 @@ function POSLayoutInner() {
               >
                 <RoleIcon className="w-4 h-4" />
               </div>
-              <span className="text-[0.8125rem] hidden sm:block">{currentRole}</span>
+              <span className="text-[0.8125rem] hidden sm:block">{t(`pos:roles.${currentRole}`)}</span>
               <ChevronDown
                 className="w-4 h-4 transition-transform"
                 style={{
@@ -204,9 +213,9 @@ function POSLayoutInner() {
                   className="px-3.5 py-2.5 text-[0.6875rem] uppercase tracking-wider"
                   style={{ color: isDark ? "#6b7280" : "#94a3b8" }}
                 >
-                  Switch Role
+                  {t("pos:switchRole")}
                 </div>
-                {ROLE_OPTIONS.map(({ role, icon: Icon, label }) => {
+                {ROLE_OPTIONS.map(({ role, icon: Icon }) => {
                   const isActive = currentRole === role;
                   const permCount = ROLE_NAV_ACCESS[role].length;
                   return (
@@ -247,12 +256,12 @@ function POSLayoutInner() {
                         <Icon className="w-4 h-4" />
                       </div>
                       <div className="flex flex-col items-start gap-0.5">
-                        <span>{label}</span>
+                        <span>{t(`pos:roles.${role}`)}</span>
                         <span
                           className="text-[0.5625rem]"
                           style={{ color: isDark ? "#6b7280" : "#94a3b8" }}
                         >
-                          {permCount} page{permCount !== 1 ? "s" : ""}
+                          {t("pos:pageCount", { count: permCount })}
                         </span>
                       </div>
                       {isActive && (
@@ -274,9 +283,9 @@ function POSLayoutInner() {
 
       {/* Bottom navigation bar — 80px */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 h-20 flex items-stretch transition-colors duration-200"
+        className="fixed bottom-0 left-0 right-0 z-50 h-20 flex items-stretch transition-colors duration-200"
         style={{
-          background: isDark ? "transparent" : "#ffffff",
+          background: isDark ? "#0B0F14" : "#ffffff",
           borderTop: isDark ? "1px solid #222C38" : "1px solid #cbd5e1",
         }}
       >
@@ -348,9 +357,9 @@ function ToastClearAll() {
         color: "#1d4ed8",
       }}
       className="fixed right-5 top-2 px-3 py-[5px] rounded-full text-[0.6875rem] cursor-pointer hover:brightness-105 active:scale-95 transition-all"
-      aria-label="Clear all notifications"
+      aria-label={t("common:clearAllAria")}
     >
-      Clear All
+      {t("common:clearAll")}
     </button>
   );
 }

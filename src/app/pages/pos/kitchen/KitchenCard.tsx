@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 import type { KitchenOrder } from "./types";
-import { formatTime24, getElapsedMinutes, getUrgencyLabel } from "./data";
+import { formatTime24, getElapsedMinutes, getUrgencyState } from "./data";
 import { ConfirmActionModal } from "./ConfirmActionModal";
 import { ItemCountModal } from "./ItemCountModal";
+import { useKitchenLabels } from "./useKitchenLabels";
 
 interface KitchenCardProps {
   order: KitchenOrder;
@@ -19,11 +21,14 @@ interface KitchenCardProps {
 
 export function KitchenCard({ order, viewTab, acceptOrder, completeOrder, recallOrder, toggleItemDone, setItemSelectedQty, setShowDetail }: KitchenCardProps) {
   const tc = useThemeClasses();
+  const { t } = useTranslation("kitchen");
+  const { itemLabel, modifierLabel, tableLabel, urgencyLabel } = useKitchenLabels();
   const [showConfirm, setShowConfirm] = useState<"complete" | "recall" | "accept" | "received-complete" | null>(null);
   const [countModalItemId, setCountModalItemId] = useState<string | null>(null);
 
   const elapsed = getElapsedMinutes(order.orderedAt);
-  const urgency = getUrgencyLabel(elapsed);
+  const urgencyState = getUrgencyState(elapsed);
+  const urgencyText = urgencyLabel(urgencyState.kind, urgencyState.minutes);
 
   const isReceived = viewTab === "received";
   const isInProgress = viewTab === "in-progress";
@@ -72,26 +77,26 @@ export function KitchenCard({ order, viewTab, acceptOrder, completeOrder, recall
         {/* Order time + urgency */}
         <div className="flex items-center justify-between mb-1">
           <span className={`text-[0.75rem] ${tc.isDark ? "text-slate-400" : "text-slate-400"}`}>
-            Order {formatTime24(order.orderedAt)}
+            {t("ui.orderAt", { time: formatTime24(order.orderedAt) })}
           </span>
           {!isCompleted && (
             <span className="flex items-center gap-1">
-              {urgency.isUrgent && (
+              {urgencyState.isUrgent && (
                 <>
                   <span className="w-2 h-2 rounded-full bg-red-500" />
-                  <span className="text-[0.6875rem] text-red-500">{urgency.label}</span>
+                  <span className="text-[0.6875rem] text-red-500">{urgencyText}</span>
                 </>
               )}
-              {urgency.isWarning && (
+              {urgencyState.isWarning && (
                 <>
                   <span className="w-2 h-2 rounded-full bg-orange-500" />
-                  <span className="text-[0.6875rem] text-orange-500">{urgency.label}</span>
+                  <span className="text-[0.6875rem] text-orange-500">{urgencyText}</span>
                 </>
               )}
-              {!urgency.isUrgent && !urgency.isWarning && elapsed <= 1 && (
+              {!urgencyState.isUrgent && !urgencyState.isWarning && elapsed <= 1 && (
                 <>
                   <span className="w-2 h-2 rounded-full bg-blue-500" />
-                  <span className={`text-[0.6875rem] ${tc.isDark ? "text-blue-400" : "text-blue-500"}`}>{urgency.label}</span>
+                  <span className={`text-[0.6875rem] ${tc.isDark ? "text-blue-400" : "text-blue-500"}`}>{urgencyText}</span>
                 </>
               )}
             </span>
@@ -100,7 +105,7 @@ export function KitchenCard({ order, viewTab, acceptOrder, completeOrder, recall
 
         {/* Table name */}
         <h3 className={`text-[1.125rem] ${tc.isDark ? "text-white" : "text-slate-900"}`}>
-          {order.table}
+          {tableLabel(order.table)}
         </h3>
 
         {/* Action buttons */}
@@ -113,13 +118,13 @@ export function KitchenCard({ order, viewTab, acceptOrder, completeOrder, recall
                   tc.isDark ? "border-blue-500 text-blue-400 hover:bg-blue-500/10" : "border-blue-500 text-blue-500 hover:bg-blue-50"
                 }`}
               >
-                Accept
+                {t("ui.accept")}
               </button>
               <button
                 onClick={() => setShowConfirm("received-complete")}
                 className="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[0.8125rem] cursor-pointer transition-colors"
               >
-                Complete
+                {t("ui.complete")}
               </button>
             </>
           )}
@@ -133,7 +138,9 @@ export function KitchenCard({ order, viewTab, acceptOrder, completeOrder, recall
                   : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
               }`}
             >
-              Complete {checkedItems.length > 0 ? `(${checkedItems.length})` : ""}
+              {checkedItems.length > 0
+                ? t("ui.completeWithCount", { count: checkedItems.length })
+                : t("ui.complete")}
             </button>
           )}
           {isCompleted && (
@@ -146,7 +153,9 @@ export function KitchenCard({ order, viewTab, acceptOrder, completeOrder, recall
                   : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
               }`}
             >
-              Recall {completedCheckedItems.length > 0 ? `(${completedCheckedItems.length})` : ""}
+              {completedCheckedItems.length > 0
+                ? t("ui.recallWithCount", { count: completedCheckedItems.length })
+                : t("ui.recall")}
             </button>
           )}
         </div>
@@ -177,13 +186,13 @@ export function KitchenCard({ order, viewTab, acceptOrder, completeOrder, recall
                   ? tc.isDark ? "text-slate-300 line-through" : "text-slate-500 line-through"
                   : tc.isDark ? "text-slate-200" : "text-slate-700"
               }`}>
-                {item.name}
+                {itemLabel(item.itemKey)}
               </span>
-              {item.modifier && (
+              {item.modifierKey ? (
                 <p className={`text-[0.6875rem] mt-0.5 ${tc.isDark ? "text-slate-500" : "text-slate-400"}`}>
-                  ∟ {item.modifier}
+                  ∟ {modifierLabel(item.modifierKey)}
                 </p>
-              )}
+              ) : null}
             </div>
             <span className={`text-[0.875rem] shrink-0 ${
               item.done
@@ -235,7 +244,7 @@ export function KitchenCard({ order, viewTab, acceptOrder, completeOrder, recall
               : "border-slate-200 text-slate-500 hover:bg-slate-50"
           }`}
         >
-          Order Details
+          {t("ui.orderDetails")}
         </button>
       </div>
 

@@ -1,0 +1,22 @@
+{
+  "brandName": "글라스 오니언",
+  "brandSubtitle": "POS 시스템",
+  "nav": {
+    "analytics": "통계",
+    "floor-plan": "식탁관리",
+    "orders": "주문",
+    "kitchen": "주방",
+    "settings": "설정"
+  },
+  "roles": {
+    "Admin": "관리자",
+    "Cashier": "출납",
+    "Chef": "료리사",
+    "Waiter": "봉사원"
+  },
+  "switchRole": "권한 변경",
+  "pageCount": "{{count}}개 화면",
+  "lockScreen": "잠금 화면",
+  "themeLight": "라이트 모드로",
+  "themeDark": "다크 모드로"
+}

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Minus, X, Undo2, Redo2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useColors } from "./useColors";
 import { SizeMatrixPicker } from "./SizeMatrixPicker";
 import { FloorCanvas } from "./FloorCanvas";
 import type { Table, Floor } from "./types";
 import { BASE_W, BASE_H } from "./types";
+import { formatFloorDisplayName } from "./floorI18n";
 
 interface EditModeProps {
   activeFloor: Floor;
@@ -42,6 +44,7 @@ export function EditMode(props: EditModeProps) {
     addTable, deleteTable, duplicateTable, updateSelectedProp, updateTables,
     handleMouseDown, guides, zoom, setZoom, isMobile, scrollRef,
   } = props;
+  const { t } = useTranslation("floor");
   const C = useColors();
   const sel = selectedTable ? tables.find((t) => t.id === selectedTable) : null;
   const getSizeCols = (t: Table) => Math.round(t.width / BASE_W) || 1;
@@ -62,7 +65,7 @@ export function EditMode(props: EditModeProps) {
         <div className="px-4 pb-4 space-y-5">
           <input value={sel.label} onChange={(e) => updateSelectedProp("label", e.target.value)} className="w-full px-3 py-2 rounded-lg border text-sm outline-none focus:border-blue-400" style={{ borderColor: C.editBorder, color: C.editText1, background: C.editCanvas }} />
           <div>
-            <div className="text-xs mb-2" style={{ color: C.editText2 }}>Seats</div>
+            <div className="text-xs mb-2" style={{ color: C.editText2 }}>{t("edit.seats")}</div>
             <div className="flex items-center gap-3 justify-center">
               <button onClick={() => updateSelectedProp("seats", Math.max(1, sel.seats - 1))} className="w-8 h-8 rounded-full border flex items-center justify-center cursor-pointer" style={{ borderColor: C.editBorder, color: C.editText2 }}><Minus size={14} /></button>
               <span className="text-2xl font-bold" style={{ color: C.editText1 }}>{sel.seats}</span>
@@ -70,7 +73,7 @@ export function EditMode(props: EditModeProps) {
             </div>
           </div>
           <div className="flex flex-col items-center">
-            <div className="text-xs mb-2" style={{ color: C.editText2 }}>Shape</div>
+            <div className="text-xs mb-2" style={{ color: C.editText2 }}>{t("edit.shape")}</div>
             <div className="flex gap-3 justify-center">
               {(["rect", "circle"] as const).map((s) => (
                 <button key={s} onClick={() => updateSelectedProp("shape", s)} className="w-10 h-10 rounded-lg border-2 flex items-center justify-center cursor-pointer" style={{ borderColor: sel.shape === s ? C.editSelected : C.editBorder, background: sel.shape === s ? "rgba(75,131,255,0.08)" : "transparent" }}>
@@ -80,12 +83,12 @@ export function EditMode(props: EditModeProps) {
             </div>
           </div>
           <div className="flex flex-col items-center">
-            <div className="text-xs mb-2" style={{ color: C.editText2 }}>Size</div>
+            <div className="text-xs mb-2" style={{ color: C.editText2 }}>{t("edit.size")}</div>
             <SizeMatrixPicker cols={getSizeCols(sel)} rows={getSizeRows(sel)} onChange={(c, r) => updateTables(tables.map((t) => t.id === selectedTable ? { ...t, width: c * BASE_W, height: r * BASE_H } : t))} />
           </div>
           <div className="flex gap-2 pt-2 border-t" style={{ borderColor: C.editBorder }}>
-            <button onClick={() => duplicateTable(sel.id)} className="flex-1 py-2 text-sm rounded-lg border cursor-pointer hover:opacity-80" style={{ borderColor: C.editBorder, color: C.editText1, background: C.editCanvas }}>Copy</button>
-            <button onClick={() => deleteTable(sel.id)} className="flex-1 py-2 text-sm rounded-lg cursor-pointer" style={{ color: "#EF4444", background: "rgba(239,68,68,0.06)" }}>Delete</button>
+            <button onClick={() => duplicateTable(sel.id)} className="flex-1 py-2 text-sm rounded-lg border cursor-pointer hover:opacity-80" style={{ borderColor: C.editBorder, color: C.editText1, background: C.editCanvas }}>{t("edit.copy")}</button>
+            <button onClick={() => deleteTable(sel.id)} className="flex-1 py-2 text-sm rounded-lg cursor-pointer" style={{ color: "#EF4444", background: "rgba(239,68,68,0.06)" }}>{t("edit.delete")}</button>
           </div>
         </div>
       )}
@@ -104,14 +107,14 @@ export function EditMode(props: EditModeProps) {
         </div>
         <div className="px-4 pb-4 overflow-y-auto" style={{ maxHeight: "calc(55vh - 24px)" }}>
           <button onClick={addTable} className="w-full py-3 mb-3 rounded-lg border-2 border-dashed flex items-center justify-center gap-2 cursor-pointer hover:border-blue-400 transition-colors text-sm" style={{ borderColor: C.editBorder, color: C.editText2 }}>
-            <Plus size={18} /> Add Table
+            <Plus size={18} /> {t("edit.addTable")}
           </button>
           {sel ? (
             <div className="space-y-4">
               <input value={sel.label} onChange={(e) => updateSelectedProp("label", e.target.value)} className="w-full px-3 py-2 rounded-lg border text-sm outline-none focus:border-blue-400" style={{ borderColor: C.editBorder, color: C.editText1, background: C.editCanvas }} />
               <div className="flex gap-4 items-start">
                 <div className="flex-1">
-                  <div className="text-xs mb-1.5" style={{ color: C.editText2 }}>Seats</div>
+                  <div className="text-xs mb-1.5" style={{ color: C.editText2 }}>{t("edit.seats")}</div>
                   <div className="flex items-center gap-2 justify-center">
                     <button onClick={() => updateSelectedProp("seats", Math.max(1, sel.seats - 1))} className="w-7 h-7 rounded-full border flex items-center justify-center cursor-pointer" style={{ borderColor: C.editBorder, color: C.editText2 }}><Minus size={12} /></button>
                     <span className="text-lg font-bold" style={{ color: C.editText1 }}>{sel.seats}</span>
@@ -119,7 +122,7 @@ export function EditMode(props: EditModeProps) {
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs mb-1.5" style={{ color: C.editText2 }}>Shape</div>
+                  <div className="text-xs mb-1.5" style={{ color: C.editText2 }}>{t("edit.shape")}</div>
                   <div className="flex gap-2">
                     {(["rect", "circle"] as const).map((s) => (
                       <button key={s} onClick={() => updateSelectedProp("shape", s)} className="w-9 h-9 rounded-lg border-2 flex items-center justify-center cursor-pointer" style={{ borderColor: sel.shape === s ? C.editSelected : C.editBorder, background: sel.shape === s ? "rgba(75,131,255,0.08)" : "transparent" }}>
@@ -129,18 +132,18 @@ export function EditMode(props: EditModeProps) {
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs mb-1.5" style={{ color: C.editText2 }}>Size</div>
+                  <div className="text-xs mb-1.5" style={{ color: C.editText2 }}>{t("edit.size")}</div>
                   <SizeMatrixPicker cols={getSizeCols(sel)} rows={getSizeRows(sel)} onChange={(c, r) => updateTables(tables.map((t) => t.id === selectedTable ? { ...t, width: c * BASE_W, height: r * BASE_H } : t))} />
                 </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => duplicateTable(sel.id)} className="flex-1 py-2 text-sm rounded-lg border cursor-pointer" style={{ borderColor: C.editBorder, color: C.editText1 }}>Copy</button>
-                <button onClick={() => { deleteTable(sel.id); setMobileEditDrawerOpen(false); }} className="flex-1 py-2 text-sm rounded-lg cursor-pointer" style={{ color: "#EF4444", background: "rgba(239,68,68,0.06)" }}>Delete</button>
+                <button onClick={() => duplicateTable(sel.id)} className="flex-1 py-2 text-sm rounded-lg border cursor-pointer" style={{ borderColor: C.editBorder, color: C.editText1 }}>{t("edit.copy")}</button>
+                <button onClick={() => { deleteTable(sel.id); setMobileEditDrawerOpen(false); }} className="flex-1 py-2 text-sm rounded-lg cursor-pointer" style={{ color: "#EF4444", background: "rgba(239,68,68,0.06)" }}>{t("edit.delete")}</button>
               </div>
             </div>
           ) : (
             <div className="py-4 text-center text-sm" style={{ color: C.editText3 }}>
-              Tap a table to edit its properties
+              {t("edit.tapTableHint")}
             </div>
           )}
         </div>
@@ -156,20 +159,20 @@ export function EditMode(props: EditModeProps) {
           {editingFloorName ? (
             <input autoFocus value={activeFloor.name} onChange={(e) => updateFloorName(e.target.value)} onBlur={() => setEditingFloorName(false)} onKeyDown={(e) => e.key === "Enter" && setEditingFloorName(false)} className="font-bold text-sm px-2 py-1 border rounded outline-none focus:border-blue-400" style={{ color: C.editText1, borderColor: C.editBorder, background: C.editCanvas }} />
           ) : (
-            <span className="font-bold text-sm cursor-pointer hover:underline" style={{ color: C.editText1 }} onClick={() => setEditingFloorName(true)} title="Click to rename">{activeFloor.name}</span>
+            <span className="font-bold text-sm cursor-pointer hover:underline" style={{ color: C.editText1 }} onClick={() => setEditingFloorName(true)} title={t("edit.renameFloorTitle")}>{formatFloorDisplayName(activeFloor.name, t)}</span>
           )}
           <span style={{ color: C.editText3 }}>|</span>
           <label className="flex items-center gap-2 text-sm cursor-pointer select-none" style={{ color: C.editText2 }}>
-            <span className="hidden sm:inline">Show seats</span>
+            <span className="hidden sm:inline">{t("edit.showSeats")}</span>
             <div onClick={() => setShowSeats(!showSeats)} className="relative w-10 h-5 rounded-full transition-colors" style={{ background: showSeats ? C.editSelected : C.editText3 }}>
               <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform" style={{ left: showSeats ? 22 : 2 }} />
             </div>
           </label>
         </div>
         <div className="flex items-center gap-3 md:gap-4">
-          <button onClick={undo} className="flex items-center gap-1 text-sm cursor-pointer" style={{ color: historyIdx > 0 ? C.editText1 : C.editText3 }}><Undo2 size={14} /> <span className="hidden sm:inline">Undo</span></button>
-          <button onClick={redo} className="flex items-center gap-1 text-sm cursor-pointer" style={{ color: historyIdx < historyLength - 1 ? C.editText1 : C.editText3 }}><Redo2 size={14} /> <span className="hidden sm:inline">Redo</span></button>
-          <button onClick={() => { setEditMode(false); setSelectedTable(null); }} className="px-4 md:px-5 py-1.5 rounded-lg text-sm font-semibold cursor-pointer" style={{ background: C.editSelected, color: "#fff" }}>Save</button>
+          <button onClick={undo} className="flex items-center gap-1 text-sm cursor-pointer" style={{ color: historyIdx > 0 ? C.editText1 : C.editText3 }}><Undo2 size={14} /> <span className="hidden sm:inline">{t("edit.undo")}</span></button>
+          <button onClick={redo} className="flex items-center gap-1 text-sm cursor-pointer" style={{ color: historyIdx < historyLength - 1 ? C.editText1 : C.editText3 }}><Redo2 size={14} /> <span className="hidden sm:inline">{t("edit.redo")}</span></button>
+          <button onClick={() => { setEditMode(false); setSelectedTable(null); }} className="px-4 md:px-5 py-1.5 rounded-lg text-sm font-semibold cursor-pointer" style={{ background: C.editSelected, color: "#fff" }}>{t("edit.save")}</button>
         </div>
       </div>
       <div className="flex-1 flex overflow-hidden relative">

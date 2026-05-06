@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Minus, Plus, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 import type { KitchenOrderItem } from "./types";
+import { useKitchenLabels } from "./useKitchenLabels";
 
 interface ItemCountModalProps {
   item: KitchenOrderItem;
@@ -12,6 +14,8 @@ interface ItemCountModalProps {
 
 export function ItemCountModal({ item, action, onConfirm, onCancel }: ItemCountModalProps) {
   const tc = useThemeClasses();
+  const { t } = useTranslation("kitchen");
+  const { itemLabel } = useKitchenLabels();
   const [count, setCount] = useState(item.selectedQty ?? item.qty);
 
   const dec = () => setCount((c) => Math.max(1, c - 1));
@@ -29,9 +33,9 @@ export function ItemCountModal({ item, action, onConfirm, onCancel }: ItemCountM
         <div className={`p-5 border-b ${tc.border} flex items-center justify-between`}>
           <div>
             <h3 className={`text-[1rem] ${tc.heading}`}>
-              {action === "complete" ? "Complete Items" : "Recall Items"}
+              {action === "complete" ? t("modalCount.completeTitle") : t("modalCount.recallTitle")}
             </h3>
-            <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>{item.name}</p>
+            <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>{itemLabel(item.itemKey)}</p>
           </div>
           <button onClick={onCancel} className={`p-1.5 rounded-lg ${tc.hover} ${tc.subtext} cursor-pointer`}>
             <X className="w-4 h-4" />
@@ -44,23 +48,31 @@ export function ItemCountModal({ item, action, onConfirm, onCancel }: ItemCountM
             disabled={count <= 1}
             className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
               count <= 1
-                ? tc.isDark ? "bg-slate-800 text-slate-600 cursor-not-allowed" : "bg-slate-100 text-slate-300 cursor-not-allowed"
-                : tc.isDark ? "bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer" : "bg-slate-200 hover:bg-slate-300 text-slate-700 cursor-pointer"
+                ? tc.isDark
+                  ? "bg-slate-800 text-slate-600 cursor-not-allowed"
+                  : "bg-slate-100 text-slate-300 cursor-not-allowed"
+                : tc.isDark
+                  ? "bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer"
+                  : "bg-slate-200 hover:bg-slate-300 text-slate-700 cursor-pointer"
             }`}
           >
             <Minus className="w-4 h-4" />
           </button>
           <div className="flex flex-col items-center min-w-[80px]">
             <span className={`text-[2rem] ${tc.heading}`}>{count}</span>
-            <span className={`text-[0.75rem] ${tc.subtext}`}>of {item.qty}</span>
+            <span className={`text-[0.75rem] ${tc.subtext}`}>{t("modalCount.ofTotal", { qty: item.qty })}</span>
           </div>
           <button
             onClick={inc}
             disabled={count >= item.qty}
             className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
               count >= item.qty
-                ? tc.isDark ? "bg-slate-800 text-slate-600 cursor-not-allowed" : "bg-slate-100 text-slate-300 cursor-not-allowed"
-                : tc.isDark ? "bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer" : "bg-slate-200 hover:bg-slate-300 text-slate-700 cursor-pointer"
+                ? tc.isDark
+                  ? "bg-slate-800 text-slate-600 cursor-not-allowed"
+                  : "bg-slate-100 text-slate-300 cursor-not-allowed"
+                : tc.isDark
+                  ? "bg-slate-700 hover:bg-slate-600 text-slate-200 cursor-pointer"
+                  : "bg-slate-200 hover:bg-slate-300 text-slate-700 cursor-pointer"
             }`}
           >
             <Plus className="w-4 h-4" />
@@ -76,13 +88,13 @@ export function ItemCountModal({ item, action, onConfirm, onCancel }: ItemCountM
                 : "border-slate-300 text-slate-500 hover:bg-slate-50"
             }`}
           >
-            Cancel
+            {t("modalCount.cancel")}
           </button>
           <button
             onClick={() => onConfirm(count)}
             className="flex-1 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[0.8125rem] cursor-pointer transition-colors"
           >
-            Select
+            {t("modalCount.select")}
           </button>
         </div>
       </div>

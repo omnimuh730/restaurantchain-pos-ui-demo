@@ -1,0 +1,91 @@
+{
+  "views": {
+    "floor": "Floor View",
+    "table": "Table View",
+    "calendar": "Calendar View"
+  },
+  "mock": {
+    "hall": "Hall",
+    "lounge": "Lounge",
+    "tableLabel": "Table {{n}}"
+  },
+  "tabs": {
+    "addFloor": "Add Floor",
+    "editLayout": "Edit Layout",
+    "removeFloor": "Remove Floor",
+    "floorOptionsAria": "Floor options",
+    "floorOptionsTitle": "Floor options",
+    "doubleClickRename": "Double-click to rename"
+  },
+  "addFloorModal": {
+    "title": "Add Floor",
+    "hint": "Enter a name for the new floor.",
+    "placeholder": "Floor name",
+    "cancel": "Cancel",
+    "add": "Add"
+  },
+  "removeFloorModal": {
+    "title": "Remove Floor",
+    "confirm": "Delete floor \"{{name}}\"? This will remove all tables on this floor.",
+    "cancel": "Cancel",
+    "delete": "Delete"
+  },
+  "edit": {
+    "addTable": "Add Table",
+    "seats": "Seats",
+    "shape": "Shape",
+    "size": "Size",
+    "copy": "Copy",
+    "delete": "Delete",
+    "copySuffix": "copy",
+    "showSeats": "Show seats",
+    "undo": "Undo",
+    "redo": "Redo",
+    "save": "Save",
+    "tapTableHint": "Tap a table to edit its properties",
+    "renameFloorTitle": "Click to rename"
+  },
+  "canvas": {
+    "reserved": "Reserved",
+    "zoomPercent": "{{pct}}%"
+  },
+  "tableCard": {
+    "seats": "seats",
+    "seatsCount": "{{occupied}}/{{total}} seats",
+    "seatsTotal": "{{n}} seats"
+  },
+  "notify": {
+    "tag": "Floor Plan",
+    "newRequestTitle": "New reservation request",
+    "newRequestDesc": "{{guest}} · {{count}} guests",
+    "canceledTitle": "Reservation canceled",
+    "canceledDesc": "{{guest}} canceled",
+    "timeUpdatedTitle": "Reservation time updated",
+    "timeUpdatedDesc": "{{guest}} · moved to {{time}}",
+    "dismissAria": "Dismiss"
+  },
+  "drawer": {
+    "seatCount": "{{n}} seats",
+    "seats": "seats",
+    "minutes": "{{n}} min",
+    "occupied": "Occupied",
+    "reserved": "Reserved",
+    "guest": "Guest",
+    "time": "Time",
+    "partySize": "Party size",
+    "partyShort": "{{n}}P",
+    "reservationQr": "Reservation QR",
+    "qrHint": "Show this code at check-in.",
+    "paymentTotal": "Payment total",
+    "seatGuest": "Seat Guest",
+    "checkIn": "Check In",
+    "cancel": "Cancel",
+    "closeAria": "Close",
+    "moreOptionsAria": "More options",
+    "reservedLine": "Reserved · {{time}}",
+    "noActiveOrders": "No active orders",
+    "qrScanHint": "Scan to view reservation or check in.",
+    "orderTotal": "Order total ({{count}} items)",
+    "payment": "Payment"
+  }
+}

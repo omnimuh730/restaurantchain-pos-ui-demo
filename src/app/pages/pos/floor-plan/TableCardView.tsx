@@ -1,6 +1,9 @@
+import { useTranslation } from "react-i18next";
 import { useColors, useIsMobile } from "./useColors";
 import { FloorTabsRow } from "./FloorTabsRow";
 import type { Floor, Table } from "./types";
+import { formatTableLabel } from "./floorI18n";
+import { formatDomesticWon } from "../../../../i18n/formatMoney";
 
 interface TableCardViewProps {
   floors: Floor[];
@@ -21,6 +24,7 @@ export function TableCardView(props: TableCardViewProps) {
     addFloor, setEditMode, renameFloorById, showSeats, setShowSeats,
     setSelectedTable,
   } = props;
+  const { t: tr } = useTranslation("floor");
   const C = useColors();
   const isMobile = useIsMobile();
 
@@ -45,18 +49,20 @@ export function TableCardView(props: TableCardViewProps) {
                 onClick={() => setSelectedTable(t.id)}
               >
                 <div className="flex items-center gap-1.5" style={{ color: isOcc ? "#fff" : C.editText1 }}>
-                  <span className="font-normal text-[14px] md:text-base">{t.label}</span>
+                  <span className="font-normal text-[14px] md:text-base">{formatTableLabel(t.label, tr)}</span>
                 </div>
                 <div className="mt-1 text-xs md:text-sm" style={{ color: isOcc ? "rgba(255,255,255,0.85)" : C.editText2 }}>
-                  {isOcc ? `${t.occupiedSeats ?? t.seats}/${t.seats} seats` : `${t.seats} seats`}
+                  {isOcc
+                    ? tr("tableCard.seatsCount", { occupied: t.occupiedSeats ?? t.seats, total: t.seats })
+                    : tr("tableCard.seatsTotal", { n: t.seats })}
                 </div>
                 <div className="flex-1" />
                 {isRes && (
-                  <div className="text-xs md:text-sm mt-1" style={{ color: C.editText2 }}>Reserved · {t.reservationTime}</div>
+                  <div className="text-xs md:text-sm mt-1" style={{ color: C.editText2 }}>{tr("drawer.reservedLine", { time: t.reservationTime ?? "" })}</div>
                 )}
                 {isOcc && t.revenue && (
                   <div className="text-right mt-2 text-[13px] md:text-sm" style={{ color: "#fff" }}>
-                    {t.revenue.toLocaleString()} {"\u20A9"}
+                    {formatDomesticWon(t.revenue)}
                   </div>
                 )}
               </div>

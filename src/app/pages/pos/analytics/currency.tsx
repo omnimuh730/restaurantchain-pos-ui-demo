@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import { formatDomesticWon, formatForeignUsd } from "../../../../i18n/formatMoney";
 
 export type MoneyCurrency = "foreign" | "domestic";
 
@@ -22,16 +24,16 @@ const Ctx = createContext<CurrencyCtx | null>(null);
 
 function formatFor(currency: MoneyCurrency, value: number | undefined | null): string {
   if (value == null || isNaN(value as number)) return "—";
-  if (currency === "domestic") return `₩${Math.round(value as number).toLocaleString()}`;
-  return `$${(value as number).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (currency === "domestic") return formatDomesticWon(value as number);
+  return formatForeignUsd(value as number);
 }
 
 export function AnalyticsCurrencyProvider({ children }: { children: ReactNode }) {
-  const [currency, setCurrency] = useState<MoneyCurrency>("foreign");
+  const [currency, setCurrency] = useState<MoneyCurrency>("domestic");
   const fmt = (value: number | undefined | null) => formatFor(currency, value);
   const pick = (amt: MoneyAmount) =>
     currency === "domestic" ? formatFor("domestic", amt.krw) : formatFor("foreign", amt.usd);
-  const symbol = currency === "domestic" ? "₩" : "$";
+  const symbol = currency === "domestic" ? "원" : "$";
   return (
     <Ctx.Provider
       value={{ currency, setCurrency, fmt, pick, symbol, isDomestic: currency === "domestic" }}
@@ -45,12 +47,12 @@ export function useAnalyticsCurrency(): CurrencyCtx {
   const v = useContext(Ctx);
   if (!v) {
     return {
-      currency: "foreign",
+      currency: "domestic",
       setCurrency: () => {},
-      symbol: "$",
-      isDomestic: false,
-      fmt: (value) => formatFor("foreign", value),
-      pick: (amt) => formatFor("foreign", amt.usd),
+      symbol: "원",
+      isDomestic: true,
+      fmt: (value) => formatFor("domestic", value),
+      pick: (amt) => formatFor("domestic", amt.krw),
     };
   }
   return v;
@@ -58,11 +60,12 @@ export function useAnalyticsCurrency(): CurrencyCtx {
 
 export function CurrencyToggle({ className = "" }: { className?: string }) {
   const { currency, setCurrency } = useAnalyticsCurrency();
+  const { t } = useTranslation("orders");
   return (
     <div className={`inline-flex items-center rounded-md p-0.5 bg-slate-200 dark:bg-slate-800 ${className}`}>
       {([
-        { id: "foreign" as MoneyCurrency, label: "$ Foreign" },
-        { id: "domestic" as MoneyCurrency, label: "₩ Domestic" },
+        { id: "foreign" as MoneyCurrency, label: t("ui.currencyToggleForeign") },
+        { id: "domestic" as MoneyCurrency, label: t("ui.currencyToggleDomestic") },
       ]).map((o) => {
         const active = currency === o.id;
         return (

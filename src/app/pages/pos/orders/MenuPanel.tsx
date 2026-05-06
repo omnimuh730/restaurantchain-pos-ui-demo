@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 import { MAIN_CATEGORIES, SUB_CATEGORIES, MENU_ITEMS } from "./data";
 
@@ -19,13 +20,16 @@ export function MenuPanel(props: MenuPanelProps) {
     searchQuery, setSearchQuery, addItemToOrder,
   } = props;
   const tc = useThemeClasses();
+  const { t } = useTranslation("orders");
 
   const subCategories = SUB_CATEGORIES[selectedMainCategory] || [];
   const allItemsForMain = subCategories.flatMap((sub) => MENU_ITEMS[sub.id] || []);
   const items = selectedSubCategory ? (MENU_ITEMS[selectedSubCategory] || []) : allItemsForMain;
-  const filteredItems = items.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const q = searchQuery.trim().toLowerCase();
+  const filteredItems = items.filter((item) => {
+    const label = t(`items.${item.id}`).toLowerCase();
+    return label.includes(q);
+  });
 
   const handleMainCategoryChange = (categoryId: string) => {
     setSelectedMainCategory(categoryId);
@@ -34,7 +38,6 @@ export function MenuPanel(props: MenuPanelProps) {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-      {/* Search Bar */}
       <div className={`px-3 py-1.5 border-b ${tc.border}`}>
         <div className="relative">
           <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${tc.subtext}`} />
@@ -42,13 +45,12 @@ export function MenuPanel(props: MenuPanelProps) {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search"
+            placeholder={t("ui.searchPlaceholder")}
             className={`w-full pl-10 pr-4 py-2 rounded-lg text-[11px] md:text[13px] ${tc.searchInput}`}
           />
         </div>
       </div>
 
-      {/* Main Categories */}
       <div className={`px-3 py-1.5 border-b ${tc.border}`}>
         <div className="grid grid-cols-4 xl:grid-cols-5 gap-1 sm:gap-1.5">
           {MAIN_CATEGORIES.map((cat) => (
@@ -65,13 +67,12 @@ export function MenuPanel(props: MenuPanelProps) {
                     : "bg-slate-200 hover:bg-slate-300 text-slate-700 border-2 border-transparent"}
               `}
             >
-              <span className="leading-tight text-left text-[11px] md:text-[13px]">{cat.label}</span>
+              <span className="leading-tight text-left text-[11px] md:text-[13px]">{t(`categoriesMain.${cat.id}`)}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Sub Categories */}
       {subCategories.length > 0 && (
         <div className={`px-3 py-1.5 border-b ${tc.border}`}>
           <div className="grid grid-cols-4 xl:grid-cols-5 gap-1 sm:gap-1.5">
@@ -89,20 +90,26 @@ export function MenuPanel(props: MenuPanelProps) {
                       : "bg-slate-100 hover:bg-slate-200 text-slate-600 border-2 border-transparent"}
                 `}
               >
-                <span className="leading-tight text-left text-[11px] md:text-[13px]">{sub.label}</span>
+                <span className="leading-tight text-left text-[11px] md:text-[13px]">{t(`subcategories.${sub.id}`)}</span>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Menu Items Grid */}
       <div className="flex-1 overflow-y-auto px-3 py-1.5 min-h-[5.5rem]">
         <div className="grid grid-cols-4 xl:grid-cols-5 gap-1 sm:gap-1.5">
           {filteredItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => addItemToOrder(item)}
+              onClick={() =>
+                addItemToOrder({
+                  id: item.id,
+                  name: t(`items.${item.id}`),
+                  price: item.price,
+                  currency: item.currency,
+                })
+              }
               className={`
                 h-10 sm:h-14 rounded transition-all text-[0.6875rem] sm:text-[0.8125rem]
                 flex items-end justify-start px-1.5 sm:px-2.5 pb-1 sm:pb-1.5 cursor-pointer
@@ -111,7 +118,7 @@ export function MenuPanel(props: MenuPanelProps) {
                   : "bg-slate-200/80 hover:bg-slate-300 text-slate-800 border-2 border-transparent hover:border-blue-400"}
               `}
             >
-              <span className="leading-tight text-left text-[11px] md:text-[13px]">{item.name}</span>
+              <span className="leading-tight text-left text-[11px] md:text-[13px]">{t(`items.${item.id}`)}</span>
             </button>
           ))}
         </div>

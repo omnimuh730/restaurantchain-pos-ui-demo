@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 
 export type DateRange = { start: Date; end: Date };
@@ -11,8 +12,6 @@ interface CustomRangePickerProps {
   onApply: (range: DateRange) => void;
   initial?: DateRange | null;
 }
-
-const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -25,6 +24,9 @@ function inRange(d: Date, start: Date | null, end: Date | null) {
 }
 
 export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRangePickerProps) {
+  const { t, i18n } = useTranslation("analytics");
+  const resolved = i18n.resolvedLanguage ?? i18n.language;
+  const locale = resolved.startsWith("ko") ? "ko-KR" : "en-US";
   const tc = useThemeClasses();
   const [viewYear, setViewYear] = useState(() => (initial?.start ?? new Date(2026, 3, 1)).getFullYear());
   const [viewMonth, setViewMonth] = useState(() => (initial?.start ?? new Date(2026, 3, 1)).getMonth());
@@ -65,9 +67,15 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
     setViewMonth(m); setViewYear(y);
   };
 
-  const presets: { label: string; getRange: () => DateRange }[] = [
+  const weekdayNarrow = useMemo(() => {
+    const fmt = new Intl.DateTimeFormat(locale, { weekday: "narrow" });
+    // Jan 7, 2024 is Sunday (0) … Jan 13 is Saturday (6)
+    return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2024, 0, 7 + i)));
+  }, [locale]);
+
+  const presets: { labelKey: string; getRange: () => DateRange }[] = [
     {
-      label: "Last 1 Week",
+      labelKey: "datePicker.presets.lastOneWeek",
       getRange: () => {
         const today = new Date();
         const lastSat = new Date(today);
@@ -79,7 +87,7 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
       },
     },
     {
-      label: "Last 2 weeks",
+      labelKey: "datePicker.presets.lastTwoWeeks",
       getRange: () => {
         const today = new Date();
         const lastSat = new Date(today);
@@ -91,7 +99,7 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
       },
     },
     {
-      label: "This Month",
+      labelKey: "datePicker.presets.thisMonth",
       getRange: () => {
         const today = new Date();
         const start = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -100,7 +108,7 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
       },
     },
     {
-      label: "Last Month",
+      labelKey: "datePicker.presets.lastMonth",
       getRange: () => {
         const today = new Date();
         const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
@@ -110,9 +118,10 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
     },
   ];
 
-  const fmt = (d: Date | null) => d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
-  const canApply = start && end;
-  const monthLabel = new Date(viewYear, viewMonth).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const fmt = (d: Date | null) =>
+    d ? d.toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" }) : "—";
+  const canApply = !!start;
+  const monthLabel = new Date(viewYear, viewMonth).toLocaleDateString(locale, { month: "long", year: "numeric" });
 
   return (
     <AnimatePresence>
@@ -134,8 +143,11 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
           >
             <div className={`flex items-center justify-between px-5 py-4 border-b ${tc.border}`}>
               <div>
-                <h3 className={`text-[1rem] ${tc.heading}`}>Select date range</h3>
-                <p className={`text-[0.875rem] ${tc.subtext} mt-0.5`}>{fmt(start)} — {fmt(end)}</p>
+                <h3 className={`text-[1rem] ${tc.heading}`}>{t("datePicker.title")}</h3>
+                <p className={`text-[0.875rem] ${tc.subtext} mt-0.5`}>
+                  {fmt(start)}
+                  {end && !sameDay(start!, end) ? `${t("datePicker.rangeSeparator")}${fmt(end)}` : ""}
+                </p>
               </div>
               <button onClick={onClose} className={`p-1.5 rounded-full cursor-pointer transition-colors ${tc.hover}`}>
                 <X className={`w-4 h-4 ${tc.subtext}`} />
@@ -145,11 +157,11 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
             <div className="flex flex-wrap gap-1.5 px-5 pt-4">
               {presets.map((p) => (
                 <button
-                  key={p.label}
+                  key={p.labelKey}
                   onClick={() => { const r = p.getRange(); setStart(r.start); setEnd(r.end); setViewMonth(r.end.getMonth()); setViewYear(r.end.getFullYear()); }}
                   className={`px-2.5 py-1 rounded-full text-[0.8125rem] cursor-pointer transition-colors ${tc.hover} ${tc.subtext} border ${tc.border}`}
                 >
-                  {p.label}
+                  {t(p.labelKey)}
                 </button>
               ))}
             </div>
@@ -166,7 +178,7 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
               </div>
 
               <div className="grid grid-cols-7 gap-1 mb-1">
-                {WEEKDAYS.map((w, i) => (
+                {weekdayNarrow.map((w, i) => (
                   <div key={`wh-${i}`} className={`text-center text-[0.75rem] ${tc.subtext} py-1`}>{w}</div>
                 ))}
               </div>
@@ -201,16 +213,16 @@ export function CustomRangePicker({ open, onClose, onApply, initial }: CustomRan
 
             <div className={`flex items-center justify-end gap-2 px-5 py-3 border-t ${tc.border}`}>
               <button onClick={onClose} className={`px-3 py-1.5 rounded-full text-[0.875rem] cursor-pointer transition-colors ${tc.subtext} ${tc.hover}`}>
-                Cancel
+                {t("datePicker.cancel")}
               </button>
               <button
-                onClick={() => { if (canApply) { onApply({ start: start!, end: end! }); onClose(); } }}
+                onClick={() => { if (canApply) { onApply({ start: start!, end: end ?? start! }); onClose(); } }}
                 disabled={!canApply}
                 className={`px-4 py-1.5 rounded-full text-[0.875rem] cursor-pointer transition-colors ${
                   canApply ? "bg-blue-600 text-white hover:bg-blue-700" : `${tc.isDark ? "bg-slate-700" : "bg-slate-200"} ${tc.subtext} cursor-not-allowed`
                 }`}
               >
-                Apply
+                {t("datePicker.apply")}
               </button>
             </div>
           </motion.div>

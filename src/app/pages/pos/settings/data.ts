@@ -62,42 +62,12 @@ import type {
 
 // ─── Sidebar Groups ─────────────────────────────────────
 export const GROUPS: SettingGroup[] = [
-  {
-    id: "general",
-    label: "General",
-    icon: Store,
-    description: "Restaurant info, hours, address",
-  },
-  {
-    id: "menu",
-    label: "Menu Management",
-    icon: UtensilsCrossed,
-    description: "Categories & menu items",
-  },
-  {
-    id: "amenities",
-    label: "Amenities & Services",
-    icon: UtensilsCrossed,
-    description: "Parking, WiFi, policies",
-  },
-  {
-    id: "security",
-    label: "Security & Payments",
-    icon: Shield,
-    description: "Password, cards, payment methods",
-  },
-  {
-    id: "staff",
-    label: "Staff & Roles",
-    icon: Users,
-    description: "Team members, permissions",
-  },
-  {
-    id: "upgrade",
-    label: "Upgrade Plans",
-    icon: Sparkles,
-    description: "Pro and Ultra plans",
-  },
+  { id: "general", icon: Store },
+  { id: "menu", icon: UtensilsCrossed },
+  { id: "amenities", icon: UtensilsCrossed },
+  { id: "security", icon: Shield },
+  { id: "staff", icon: Users },
+  { id: "upgrade", icon: Sparkles },
 ];
 
 // ─── Staff Roles ─────────────────────────────────────────
@@ -128,6 +98,12 @@ export const ROLE_CONFIG: Record<StaffRole, RoleConfig> = {
       "bg-indigo-100 text-indigo-800 border-indigo-300",
     icon: Wallet,
   },
+};
+
+/** Maps `ALL_PERMISSIONS` group keys to `staff.permGroups.*` i18n slugs */
+export const PERMISSION_GROUP_I18N_SLUG: Record<string, string> = {
+  "PAGE ACCESS": "pageAccess",
+  ACTIONS: "actions",
 };
 
 export const ALL_PERMISSIONS: Record<string, PermissionItem[]> =

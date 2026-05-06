@@ -1,7 +1,8 @@
 import { useThemeClasses } from "../theme-context";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
-  Users, Search, Check, X, Copy,
+  Users, Search, Check, X,
   Shield, Plus, UserPlus, Ban, Trash2, KeyRound,
   Clock, CheckCircle2,
 } from "lucide-react";
@@ -11,6 +12,7 @@ import { StaffPermissionsModal } from "./StaffModals";
 import { InlineModal } from "./ui-helpers";
 
 export function StaffSettings() {
+  const { t, i18n } = useTranslation("settings");
   const tc = useThemeClasses();
   const [staff, setStaff] = useState(INITIAL_STAFF);
   const [search, setSearch] = useState("");
@@ -73,7 +75,7 @@ export function StaffSettings() {
       username: regUsername.trim(),
       role: regRole,
       status: "active",
-      joinDate: new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" }),
+      joinDate: new Date().toLocaleDateString(i18n.language?.startsWith("ko") ? "ko-KR" : "en-US", { month: "short", year: "numeric" }),
       permissionCount: permCount,
       permissions: { ...defaults },
     };
@@ -114,12 +116,39 @@ export function StaffSettings() {
     setConfirmAction(null);
   };
 
-  const actionLabels: Record<string, { title: string; desc: string; btnText: string; btnColor: string }> = {
-    deactivate: { title: "Deactivate Staff", desc: "This staff member will no longer be able to log in.", btnText: "Deactivate", btnColor: "bg-amber-600 hover:bg-amber-700" },
-    activate: { title: "Activate Staff", desc: "This staff member will be able to log in again.", btnText: "Activate", btnColor: "bg-blue-600 hover:bg-blue-700" },
-    remove: { title: "Remove Staff", desc: "This action cannot be undone. The staff member will be permanently removed.", btnText: "Remove", btnColor: "bg-red-600 hover:bg-red-700" },
-    resetPassword: { title: "Reset PIN", desc: "This will generate a temporary PIN for the staff member.", btnText: "Reset PIN", btnColor: "bg-amber-600 hover:bg-amber-700" },
-  };
+  const actionLabels = useMemo(
+    () =>
+      ({
+        deactivate: {
+          title: t("staff.action.deactivate.title"),
+          desc: t("staff.action.deactivate.desc"),
+          btnText: t("staff.action.deactivate.btn"),
+          btnColor: "bg-amber-600 hover:bg-amber-700",
+        },
+        activate: {
+          title: t("staff.action.activate.title"),
+          desc: t("staff.action.activate.desc"),
+          btnText: t("staff.action.activate.btn"),
+          btnColor: "bg-blue-600 hover:bg-blue-700",
+        },
+        remove: {
+          title: t("staff.action.remove.title"),
+          desc: t("staff.action.remove.desc"),
+          btnText: t("staff.action.remove.btn"),
+          btnColor: "bg-red-600 hover:bg-red-700",
+        },
+        resetPassword: {
+          title: t("staff.action.resetPassword.title"),
+          desc: t("staff.action.resetPassword.desc"),
+          btnText: t("staff.action.resetPassword.btn"),
+          btnColor: "bg-amber-600 hover:bg-amber-700",
+        },
+      }) as Record<
+        "deactivate" | "activate" | "remove" | "resetPassword",
+        { title: string; desc: string; btnText: string; btnColor: string }
+      >,
+    [t]
+  );
 
   return (
     <div className="space-y-4">
@@ -127,14 +156,14 @@ export function StaffSettings() {
       <div className={`${tc.card} rounded-lg p-4 sm:p-5`}>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
           <div>
-            <h3 className={`text-[0.9375rem] ${tc.heading} flex items-center gap-2`}><Users className="w-4 h-4 text-blue-400" /> Staff Management</h3>
-            <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>Register staff and manage permissions</p>
+            <h3 className={`text-[0.9375rem] ${tc.heading} flex items-center gap-2`}><Users className="w-4 h-4 text-blue-400" /> {t("staff.management")}</h3>
+            <p className={`text-[0.75rem] ${tc.subtext} mt-0.5`}>{t("staff.managementDesc")}</p>
           </div>
           <button
             onClick={() => setShowRegister(true)}
             className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-[0.75rem] rounded-lg bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-colors w-full sm:w-auto"
           >
-            <Plus className="w-4 h-4" /> Register Staff
+            <Plus className="w-4 h-4" /> {t("staff.registerStaff")}
           </button>
         </div>
       </div>
@@ -142,10 +171,10 @@ export function StaffSettings() {
       {/* Stats */}
       <div className="grid grid-cols-4 gap-2">
         {[
-          { label: "Total", value: staff.length, icon: Users, color: "text-blue-400" },
-          { label: "Active", value: activeCount, icon: Check, color: "text-blue-400" },
-          { label: "Inactive", value: inactiveCount, icon: X, color: "text-gray-400" },
-          { label: "Pending", value: pendingCount, icon: Clock, color: "text-amber-400" },
+          { label: t("staff.statsTotal"), value: staff.length, icon: Users, color: "text-blue-400" },
+          { label: t("staff.statsActive"), value: activeCount, icon: Check, color: "text-blue-400" },
+          { label: t("staff.statsInactive"), value: inactiveCount, icon: X, color: "text-gray-400" },
+          { label: t("staff.statsPending"), value: pendingCount, icon: Clock, color: "text-amber-400" },
         ].map((s) => (
           <div key={s.label} className={`${tc.card} rounded-lg p-2 sm:p-3`}>
             <div className="flex items-center gap-2 mb-1">
@@ -162,7 +191,7 @@ export function StaffSettings() {
         <div className={`${tc.card} rounded-lg overflow-hidden`}>
           <div className={`px-4 py-3 border-b ${tc.cardBorder} flex items-center gap-2`}>
             <UserPlus className="w-4 h-4 text-blue-500" />
-            <h4 className={`text-[0.875rem] ${tc.heading}`}>Pending Requests</h4>
+            <h4 className={`text-[0.875rem] ${tc.heading}`}>{t("staff.pendingRequests")}</h4>
             <span className="ml-auto px-2 py-0.5 rounded-full text-[0.625rem] bg-blue-600 text-white">
               {pendingStaff.length}
             </span>
@@ -181,7 +210,7 @@ export function StaffSettings() {
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         <span className={`text-[0.6875rem] ${tc.muted}`}>@{member.username}</span>
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[0.5625rem] bg-blue-600 text-white">
-                          <RoleIcon className="w-2.5 h-2.5" /> {member.role}
+                          <RoleIcon className="w-2.5 h-2.5" /> {t(`staff.roles.${member.role}`)}
                         </span>
                       </div>
                     </div>
@@ -191,13 +220,13 @@ export function StaffSettings() {
                       onClick={() => handleApproveStaff(member.id)}
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[0.6875rem] bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-colors"
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Approve
+                      <CheckCircle2 className="w-3.5 h-3.5" /> {t("staff.approve")}
                     </button>
                     <button
                       onClick={() => handleRejectStaff(member.id)}
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[0.6875rem] border border-blue-500/50 text-blue-500 hover:bg-blue-600/10 hover:border-blue-500 cursor-pointer transition-colors"
                     >
-                      <X className="w-3.5 h-3.5" /> Reject
+                      <X className="w-3.5 h-3.5" /> {t("staff.reject")}
                     </button>
                   </div>
                 </div>
@@ -210,21 +239,21 @@ export function StaffSettings() {
       {/* Search */}
       <div className="relative">
         <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${tc.muted}`} />
-        <input placeholder="Search by name, username or card ID..." value={search} onChange={(e) => setSearch(e.target.value)} className={`${tc.input} pl-10`} />
+        <input placeholder={t("staff.searchPlaceholder")} value={search} onChange={(e) => setSearch(e.target.value)} className={`${tc.input} pl-10`} />
       </div>
 
       {/* Role filters */}
       <div className="flex items-center gap-1.5 flex-wrap">
         <button onClick={() => setRoleFilter("all")} className={`px-3 py-1.5 rounded-lg text-[0.75rem] cursor-pointer transition-colors border ${
           roleFilter === "all" ? "bg-blue-600 text-white border-blue-600" : `${tc.cardBorder} ${tc.subtext} ${tc.hover}`
-        }`}>All Roles ({nonPendingStaff.length})</button>
+        }`}>{t("staff.allRoles", { count: nonPendingStaff.length })}</button>
         {STAFF_ROLES.map((r) => {
           const cfg = ROLE_CONFIG[r];
           const Icon = cfg.icon;
           return (
             <button key={r} onClick={() => setRoleFilter(roleFilter === r ? "all" : r)} className={`px-3 py-1.5 rounded-lg text-[0.75rem] cursor-pointer transition-colors border flex items-center gap-1.5 ${
               roleFilter === r ? "bg-blue-600 text-white border-blue-600" : `${tc.cardBorder} ${tc.subtext} ${tc.hover}`
-            }`}><Icon className="w-3 h-3" /> {r} ({roleCounts[r] || 0})</button>
+            }`}><Icon className="w-3 h-3" /> {t(`staff.roles.${r}`)} ({roleCounts[r] || 0})</button>
           );
         })}
       </div>
@@ -252,24 +281,25 @@ export function StaffSettings() {
                     <span className={`text-[0.6875rem] ${tc.muted}`}>@{member.username}</span>
                     <div className="mt-1">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.625rem] bg-blue-600 text-white">
-                        <RoleIcon className="w-3 h-3" /> {member.role}
+                        <RoleIcon className="w-3 h-3" /> {t(`staff.roles.${member.role}`)}
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className={`flex items-center gap-3 text-[0.6875rem] ${tc.muted} mb-2`}>
-                  <span>Joined {member.joinDate}</span>
+                  <span>{t("staff.joined", { date: member.joinDate })}</span>
                   <span className={`px-1.5 py-0.5 rounded text-[0.5625rem] ${isActive ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-500"}`}>
-                    {member.status}
+                    {t(`staff.status.${member.status}`)}
                   </span>
                 </div>
                 {resetPasswordDone === member.id && (
                   <div className={`mb-2 px-2.5 py-1.5 rounded-lg text-[0.6875rem] bg-blue-900/20 border border-blue-700/30 text-blue-400`}>
-                    Temp PIN: <span className="font-mono tracking-widest">123456</span>
+                    {t("staff.tempPinPrefix")}{" "}
+                    <span className="font-mono tracking-widest">123456</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2 mb-3">
-                  <span className={`text-[0.6875rem] ${tc.muted} shrink-0`}>{member.permissionCount}/{totalPermCount} permissions</span>
+                  <span className={`text-[0.6875rem] ${tc.muted} shrink-0`}>{t("staff.permCount", { current: member.permissionCount, total: totalPermCount })}</span>
                   <div className="flex items-center gap-1 flex-wrap">
                     {PERM_ICONS.map((p) => {
                       const isEnabled = !!member.permissions[p.id];
@@ -285,7 +315,7 @@ export function StaffSettings() {
               </div>
               <div className={`flex border-t ${tc.cardBorder}`}>
                 <button onClick={() => setPermissionsModal(member)} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[0.75rem] transition-colors border-r ${tc.cardBorder} ${tc.subtext} ${tc.hover} cursor-pointer`}>
-                  <Shield className="w-3.5 h-3.5" /> Permissions
+                  <Shield className="w-3.5 h-3.5" /> {t("staff.permissions")}
                 </button>
                 {/* Actions dropdown-like area */}
                 <div className="flex items-stretch">
@@ -293,7 +323,7 @@ export function StaffSettings() {
                     <button
                       onClick={() => setConfirmAction({ type: "deactivate", member })}
                       className={`px-2.5 flex items-center justify-center border-r ${tc.cardBorder} ${tc.muted} ${tc.hover} transition-colors cursor-pointer`}
-                      title="Deactivate"
+                      title={t("staff.titleDeactivate")}
                     >
                       <Ban className="w-3.5 h-3.5" />
                     </button>
@@ -301,7 +331,7 @@ export function StaffSettings() {
                     <button
                       onClick={() => setConfirmAction({ type: "activate", member })}
                       className={`px-2.5 flex items-center justify-center border-r ${tc.cardBorder} text-blue-400 ${tc.hover} transition-colors cursor-pointer`}
-                      title="Activate"
+                      title={t("staff.titleActivate")}
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
                     </button>
@@ -309,14 +339,14 @@ export function StaffSettings() {
                   <button
                     onClick={() => setConfirmAction({ type: "resetPassword", member })}
                     className={`px-2.5 flex items-center justify-center border-r ${tc.cardBorder} ${tc.muted} ${tc.hover} transition-colors cursor-pointer`}
-                    title="Reset PIN"
+                    title={t("staff.titleResetPin")}
                   >
                     <KeyRound className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => setConfirmAction({ type: "remove", member })}
                     className={`px-2.5 flex items-center justify-center text-red-400/60 hover:text-red-400 ${tc.hover} transition-colors cursor-pointer`}
-                    title="Remove"
+                    title={t("staff.titleRemove")}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -332,21 +362,21 @@ export function StaffSettings() {
         <div className={`p-5 border-b ${tc.cardBorder}`}>
           <div className="flex items-center gap-2">
             <Plus className="w-5 h-5 text-blue-400" />
-            <h3 className={`text-[1rem] ${tc.heading}`}>Register New Staff</h3>
+            <h3 className={`text-[1rem] ${tc.heading}`}>{t("staff.registerNew")}</h3>
           </div>
         </div>
         <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
           <div>
-            <label className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}>Full Name *</label>
-            <input value={regName} onChange={(e) => setRegName(e.target.value)} placeholder="e.g. John Smith" className={tc.input} />
+            <label className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}>{t("staff.fullNameRequired")}</label>
+            <input value={regName} onChange={(e) => setRegName(e.target.value)} placeholder={t("staff.placeholderName")} className={tc.input} />
           </div>
           <div>
-            <label className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}>Username *</label>
-            <input value={regUsername} onChange={(e) => setRegUsername(e.target.value)} placeholder="e.g. john.smith" className={tc.input} />
+            <label className={`text-[0.8125rem] ${tc.subtext} mb-1.5 block`}>{t("staff.usernameRequired")}</label>
+            <input value={regUsername} onChange={(e) => setRegUsername(e.target.value)} placeholder={t("staff.placeholderUsername")} className={tc.input} />
           </div>
           {/* Role Selection */}
           <div>
-            <label className={`text-[0.8125rem] ${tc.subtext} mb-2 block`}>Role *</label>
+            <label className={`text-[0.8125rem] ${tc.subtext} mb-2 block`}>{t("staff.roleRequired")}</label>
             <div className="grid grid-cols-3 gap-2">
               {STAFF_ROLES.map((r) => {
                 const cfg = ROLE_CONFIG[r];
@@ -359,8 +389,8 @@ export function StaffSettings() {
                     isSelected ? "border-blue-500 bg-blue-900/10 text-blue-400" : `${tc.cardBorder} ${tc.hover} ${tc.subtext}`
                   }`}>
                     <Icon className="w-5 h-5" />
-                    <span className="text-[0.75rem]">{r}</span>
-                    <span className={`text-[0.5625rem] ${tc.muted}`}>{permCount} perms</span>
+                    <span className="text-[0.75rem]">{t(`staff.roles.${r}`)}</span>
+                    <span className={`text-[0.5625rem] ${tc.muted}`}>{t("staff.permShort", { count: permCount })}</span>
                   </button>
                 );
               })}
@@ -368,13 +398,13 @@ export function StaffSettings() {
           </div>
           {/* Role permissions preview */}
           <div className={`rounded-lg p-3 ${tc.isDark ? "bg-gray-800/50" : "bg-gray-50"}`}>
-            <p className={`text-[0.6875rem] ${tc.muted} uppercase tracking-wider mb-2`}>Default Permissions for {regRole}</p>
+            <p className={`text-[0.6875rem] ${tc.muted} uppercase tracking-wider mb-2`}>{t("staff.defaultPermsFor", { role: t(`staff.roles.${regRole}`) })}</p>
             <div className="flex flex-wrap gap-1.5">
               {Object.entries(ROLE_DEFAULTS[regRole] || {}).filter(([, v]) => v).map(([permId]) => {
                 const perm = Object.values(ALL_PERMISSIONS).flat().find(p => p.id === permId);
                 return perm ? (
                   <span key={permId} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[0.625rem] ${tc.isDark ? "bg-blue-900/30 text-blue-400" : "bg-blue-100 text-blue-700"}`}>
-                    <perm.icon className="w-3 h-3" /> {perm.label}
+                    <perm.icon className="w-3 h-3" /> {t(`staff.perms.${permId}.label`)}
                   </span>
                 ) : null;
               })}
@@ -382,7 +412,7 @@ export function StaffSettings() {
           </div>
         </div>
         <div className={`p-5 border-t ${tc.cardBorder} flex justify-end gap-2`}>
-          <button onClick={() => setShowRegister(false)} className={`px-3.5 py-1.5 text-[0.75rem] rounded-lg cursor-pointer transition-colors ${tc.btnSecondary}`}>Cancel</button>
+          <button onClick={() => setShowRegister(false)} className={`px-3.5 py-1.5 text-[0.75rem] rounded-lg cursor-pointer transition-colors ${tc.btnSecondary}`}>{t("general.cancel")}</button>
           <button
             onClick={handleRegister}
             disabled={!regName.trim() || !regUsername.trim()}
@@ -392,7 +422,7 @@ export function StaffSettings() {
                 : "bg-blue-600 hover:bg-blue-700 text-white"
             }`}
           >
-            <Check className="w-4 h-4" /> Register
+            <Check className="w-4 h-4" /> {t("staff.registerBtn")}
           </button>
         </div>
       </InlineModal>
@@ -406,13 +436,13 @@ export function StaffSettings() {
               <div className="p-5">
                 <h3 className={`text-[1rem] ${tc.heading} mb-2`}>{a.title}</h3>
                 <p className={`text-[0.8125rem] ${tc.subtext} mb-1`}>
-                  Staff: <span className={tc.heading}>{confirmAction.member.name}</span> (@{confirmAction.member.username})
+                  {t("staff.confirmStaffLine", { name: confirmAction.member.name, username: confirmAction.member.username })}
                 </p>
                 <p className={`text-[0.8125rem] ${tc.muted}`}>{a.desc}</p>
               </div>
               <div className={`p-5 border-t ${tc.cardBorder} flex justify-end gap-2`}>
                 <button onClick={() => setConfirmAction(null)} className={`px-3.5 py-1.5 text-[0.75rem] rounded-lg cursor-pointer transition-colors ${tc.btnSecondary}`}>
-                  Cancel
+                  {t("general.cancel")}
                 </button>
                 <button
                   onClick={handleConfirmAction}

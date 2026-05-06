@@ -19,206 +19,62 @@ import {
   ResponsiveContainer,
   Rectangle,
 } from "recharts";
+import { Trans, useTranslation } from "react-i18next";
 import { useThemeClasses } from "../theme-context";
 import { DateFilterBar, type Period } from "./DateFilterBar";
 import { AnimatedContent } from "./AnimatedContent";
 import { useAnalyticsCurrency } from "./currency";
+import { formatDomesticWon, formatForeignUsd } from "../../../../i18n/formatMoney";
 
-// ₩ and $ are independent pools — totally uncorrelated (different peaks, different shapes).
-const HOURLY_DATA = [
-  {
-    label: "8",
-    revenueUsd: 40,
-    revenueKrw: 680_000,
-    orders: 8,
-  },
-  {
-    label: "9",
-    revenueUsd: 120,
-    revenueKrw: 1_240_000,
-    orders: 14,
-  },
-  {
-    label: "10",
-    revenueUsd: 85,
-    revenueKrw: 2_180_000,
-    orders: 28,
-  },
-  {
-    label: "11",
-    revenueUsd: 310,
-    revenueKrw: 4_620_000,
-    orders: 52,
-  },
-  {
-    label: "12",
-    revenueUsd: 620,
-    revenueKrw: 5_900_000,
-    orders: 85,
-  },
-  {
-    label: "13",
-    revenueUsd: 540,
-    revenueKrw: 3_280_000,
-    orders: 72,
-  },
-  {
-    label: "14",
-    revenueUsd: 180,
-    revenueKrw: 1_640_000,
-    orders: 35,
-  },
-  {
-    label: "15",
-    revenueUsd: 90,
-    revenueKrw: 460_000,
-    orders: 18,
-  },
-  {
-    label: "16",
-    revenueUsd: 75,
-    revenueKrw: 320_000,
-    orders: 12,
-  },
-  {
-    label: "17",
-    revenueUsd: 220,
-    revenueKrw: 1_080_000,
-    orders: 32,
-  },
-  {
-    label: "18",
-    revenueUsd: 1180,
-    revenueKrw: 2_940_000,
-    orders: 68,
-  },
-  {
-    label: "19",
-    revenueUsd: 1840,
-    revenueKrw: 3_420_000,
-    orders: 92,
-  },
-  {
-    label: "20",
-    revenueUsd: 1520,
-    revenueKrw: 4_860_000,
-    orders: 78,
-  },
-  {
-    label: "21",
-    revenueUsd: 880,
-    revenueKrw: 5_720_000,
-    orders: 45,
-  },
-  {
-    label: "22",
-    revenueUsd: 210,
-    revenueKrw: 2_380_000,
-    orders: 18,
-  },
+interface TrendRowRaw {
+  labelKey: string;
+  revenueUsd: number;
+  revenueKrw: number;
+  orders: number;
+}
+
+const HOURLY_DATA: TrendRowRaw[] = [
+  { labelKey: "8", revenueUsd: 40, revenueKrw: 680_000, orders: 8 },
+  { labelKey: "9", revenueUsd: 120, revenueKrw: 1_240_000, orders: 14 },
+  { labelKey: "10", revenueUsd: 85, revenueKrw: 2_180_000, orders: 28 },
+  { labelKey: "11", revenueUsd: 310, revenueKrw: 4_620_000, orders: 52 },
+  { labelKey: "12", revenueUsd: 620, revenueKrw: 5_900_000, orders: 85 },
+  { labelKey: "13", revenueUsd: 540, revenueKrw: 3_280_000, orders: 72 },
+  { labelKey: "14", revenueUsd: 180, revenueKrw: 1_640_000, orders: 35 },
+  { labelKey: "15", revenueUsd: 90, revenueKrw: 460_000, orders: 18 },
+  { labelKey: "16", revenueUsd: 75, revenueKrw: 320_000, orders: 12 },
+  { labelKey: "17", revenueUsd: 220, revenueKrw: 1_080_000, orders: 32 },
+  { labelKey: "18", revenueUsd: 1180, revenueKrw: 2_940_000, orders: 68 },
+  { labelKey: "19", revenueUsd: 1840, revenueKrw: 3_420_000, orders: 92 },
+  { labelKey: "20", revenueUsd: 1520, revenueKrw: 4_860_000, orders: 78 },
+  { labelKey: "21", revenueUsd: 880, revenueKrw: 5_720_000, orders: 45 },
+  { labelKey: "22", revenueUsd: 210, revenueKrw: 2_380_000, orders: 18 },
 ];
 
-const WEEKLY_DATA = [
-  {
-    label: "Mon",
-    revenueUsd: 480,
-    revenueKrw: 4_180_000,
-    orders: 42,
-  },
-  {
-    label: "Tue",
-    revenueUsd: 1640,
-    revenueKrw: 1_920_000,
-    orders: 48,
-  },
-  {
-    label: "Wed",
-    revenueUsd: 820,
-    revenueKrw: 6_340_000,
-    orders: 55,
-  },
-  {
-    label: "Thu",
-    revenueUsd: 2180,
-    revenueKrw: 3_260_000,
-    orders: 50,
-  },
-  {
-    label: "Fri",
-    revenueUsd: 1240,
-    revenueKrw: 5_820_000,
-    orders: 68,
-  },
-  {
-    label: "Sat",
-    revenueUsd: 2940,
-    revenueKrw: 2_480_000,
-    orders: 82,
-  },
-  {
-    label: "Sun",
-    revenueUsd: 620,
-    revenueKrw: 4_960_000,
-    orders: 61,
-  },
+const WEEKLY_DATA: TrendRowRaw[] = [
+  { labelKey: "mon", revenueUsd: 480, revenueKrw: 4_180_000, orders: 42 },
+  { labelKey: "tue", revenueUsd: 1640, revenueKrw: 1_920_000, orders: 48 },
+  { labelKey: "wed", revenueUsd: 820, revenueKrw: 6_340_000, orders: 55 },
+  { labelKey: "thu", revenueUsd: 2180, revenueKrw: 3_260_000, orders: 50 },
+  { labelKey: "fri", revenueUsd: 1240, revenueKrw: 5_820_000, orders: 68 },
+  { labelKey: "sat", revenueUsd: 2940, revenueKrw: 2_480_000, orders: 82 },
+  { labelKey: "sun", revenueUsd: 620, revenueKrw: 4_960_000, orders: 61 },
 ];
 
-const MONTHLY_DATA = [
-  {
-    label: "W1",
-    revenueUsd: 4820,
-    revenueKrw: 12_360_000,
-    orders: 268,
-  },
-  {
-    label: "W2",
-    revenueUsd: 9240,
-    revenueKrw: 18_780_000,
-    orders: 312,
-  },
-  {
-    label: "W3",
-    revenueUsd: 6120,
-    revenueKrw: 26_450_000,
-    orders: 365,
-  },
-  {
-    label: "W4",
-    revenueUsd: 10940,
-    revenueKrw: 15_260_000,
-    orders: 338,
-  },
+const MONTHLY_DATA: TrendRowRaw[] = [
+  { labelKey: "w1", revenueUsd: 4820, revenueKrw: 12_360_000, orders: 268 },
+  { labelKey: "w2", revenueUsd: 9240, revenueKrw: 18_780_000, orders: 312 },
+  { labelKey: "w3", revenueUsd: 6120, revenueKrw: 26_450_000, orders: 365 },
+  { labelKey: "w4", revenueUsd: 10940, revenueKrw: 15_260_000, orders: 338 },
 ];
 
-const QUARTERLY_DATA = [
-  {
-    label: "Jan",
-    revenueUsd: 18560,
-    revenueKrw: 94_200_000,
-    orders: 1080,
-  },
-  {
-    label: "Feb",
-    revenueUsd: 32840,
-    revenueKrw: 68_400_000,
-    orders: 996,
-  },
-  {
-    label: "Mar",
-    revenueUsd: 24720,
-    revenueKrw: 112_880_000,
-    orders: 1232,
-  },
-  {
-    label: "Apr",
-    revenueUsd: 38900,
-    revenueKrw: 79_420_000,
-    orders: 1283,
-  },
+const QUARTERLY_DATA: TrendRowRaw[] = [
+  { labelKey: "jan", revenueUsd: 18560, revenueKrw: 94_200_000, orders: 1080 },
+  { labelKey: "feb", revenueUsd: 32840, revenueKrw: 68_400_000, orders: 996 },
+  { labelKey: "mar", revenueUsd: 24720, revenueKrw: 112_880_000, orders: 1232 },
+  { labelKey: "apr", revenueUsd: 38900, revenueKrw: 79_420_000, orders: 1283 },
 ];
 
-// Domestic (₩) and Foreign ($) are tracked as independent registers — not converted.
-// Each pool has its own totals, growth %, ticket size, cancel count — no relationship.
 interface KpiRow {
   totalRev: number;
   totalOrders: string;
@@ -229,6 +85,7 @@ interface KpiRow {
   ticketChange: string;
   cancelChange: string;
 }
+
 const KPI_FOREIGN: Record<string, KpiRow> = {
   today: {
     totalRev: 8450,
@@ -281,6 +138,7 @@ const KPI_FOREIGN: Record<string, KpiRow> = {
     cancelChange: "+33%",
   },
 };
+
 const KPI_DOMESTIC: Record<string, KpiRow> = {
   today: {
     totalRev: 3_840_000,
@@ -333,53 +191,36 @@ const KPI_DOMESTIC: Record<string, KpiRow> = {
     cancelChange: "-18%",
   },
 };
-// Payment-method split is its own property per pool (not same %).
+
+type PayMethod = "credit" | "cash";
+
 const PAYMENT_SPLIT: Record<
   "foreign" | "domestic",
-  {
-    name: string;
-    value: number;
-    fill: string;
-    icon: typeof CreditCard;
-  }[]
+  { methodKey: PayMethod; value: number; fill: string; icon: typeof CreditCard }[]
 > = {
   foreign: [
-    {
-      name: "Credit",
-      value: 78,
-      fill: "#3b82f6",
-      icon: CreditCard,
-    },
-    {
-      name: "Cash",
-      value: 22,
-      fill: "#22c55e",
-      icon: Banknote,
-    },
+    { methodKey: "credit", value: 78, fill: "#3b82f6", icon: CreditCard },
+    { methodKey: "cash", value: 22, fill: "#22c55e", icon: Banknote },
   ],
   domestic: [
-    {
-      name: "Credit",
-      value: 41,
-      fill: "#3b82f6",
-      icon: CreditCard,
-    },
-    {
-      name: "Cash",
-      value: 59,
-      fill: "#22c55e",
-      icon: Banknote,
-    },
+    { methodKey: "credit", value: 41, fill: "#3b82f6", icon: CreditCard },
+    { methodKey: "cash", value: 59, fill: "#22c55e", icon: Banknote },
   ],
 };
 
-function SalesTooltip({ active, payload, isDomestic }: any) {
+function SalesTooltip({
+  active,
+  payload,
+  isDomestic,
+}: {
+  active?: boolean;
+  payload?: { value?: number }[];
+  isDomestic: boolean;
+}) {
   if (!active || !payload?.length) return null;
   const rev = payload[0];
   const val = rev?.value ?? 0;
-  const label = isDomestic
-    ? `₩${Math.round(val).toLocaleString()}`
-    : `$${val.toLocaleString()}`;
+  const label = isDomestic ? formatDomesticWon(val) : formatForeignUsd(val);
   return (
     <div className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[0.875rem] shadow-lg">
       <span>{label}</span>
@@ -387,7 +228,7 @@ function SalesTooltip({ active, payload, isDomestic }: any) {
   );
 }
 
-function getDataForPeriod(period: Period) {
+function getDataForPeriod(period: Period): TrendRowRaw[] {
   switch (period) {
     case "today":
       return HOURLY_DATA;
@@ -401,90 +242,93 @@ function getDataForPeriod(period: Period) {
   }
 }
 
+function axisNs(period: Period): "axis.hour" | "axis.week" | "axis.month" | "axis.quarter" {
+  if (period === "today") return "axis.hour";
+  if (period === "month") return "axis.month";
+  if (period === "3month") return "axis.quarter";
+  return "axis.week";
+}
+
 export function DashboardView() {
+  const { t } = useTranslation("analytics");
   const [period, setPeriod] = useState<Period>("week");
   const tc = useThemeClasses();
-  const { isDomestic } = useAnalyticsCurrency();
+  const { isDomestic, fmt } = useAnalyticsCurrency();
 
-  const trendData = getDataForPeriod(period);
-  const kpis = (isDomestic ? KPI_DOMESTIC : KPI_FOREIGN)[
-    period
-  ];
+  const trendDataRaw = getDataForPeriod(period);
+  const axisPrefix = axisNs(period);
+
+  const trendData = useMemo(
+    () =>
+      trendDataRaw.map((e) => ({
+        ...e,
+        label: t(`${axisPrefix}.${e.labelKey}` as "axis.week.mon"),
+      })),
+    [trendDataRaw, axisPrefix, t],
+  );
+
+  const kpis = (isDomestic ? KPI_DOMESTIC : KPI_FOREIGN)[period];
   const kpiDomestic = KPI_DOMESTIC[period];
   const kpiForeign = KPI_FOREIGN[period];
-  const paymentSplit =
-    PAYMENT_SPLIT[isDomestic ? "domestic" : "foreign"];
 
-  const fmtMoney = (v: number) =>
-    isDomestic
-      ? `₩${Math.round(v).toLocaleString()}`
-      : `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtMoney = (v: number) => (isDomestic ? formatDomesticWon(v) : formatForeignUsd(v));
 
-  const fmtTotalRevenue = () => {
-    const usd = kpiForeign.totalRev;
-    const krw = kpiDomestic.totalRev;
-    if (usd > 0 && krw > 0) {
-      return `$${usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} + ₩${Math.round(krw).toLocaleString()}`;
-    } else if (krw > 0) {
-      return `₩${Math.round(krw).toLocaleString()}`;
-    } else {
-      return `$${usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-  };
+  const kpiCards = useMemo(
+    () => [
+      {
+        label: t("dashboard.totalOrders"),
+        value: kpis.totalOrders,
+        change: kpis.ordChange,
+        up: !kpis.ordChange.startsWith("-"),
+        icon: ShoppingCart,
+      },
+      {
+        label: t("dashboard.avgTicket"),
+        value: fmtMoney(kpis.avgTicket),
+        change: kpis.ticketChange,
+        up: !kpis.ticketChange.startsWith("-"),
+        icon: TrendingUp,
+      },
+      {
+        label: t("dashboard.cancellations"),
+        value: kpis.cancels,
+        change: kpis.cancelChange,
+        up: kpis.cancelChange.startsWith("-"),
+        icon: XCircle,
+      },
+    ],
+    [t, kpis, fmtMoney],
+  );
 
-  const kpiCards = [
-    {
-      label: "Total Orders",
-      value: kpis.totalOrders,
-      change: kpis.ordChange,
-      up: !kpis.ordChange.startsWith("-"),
-      icon: ShoppingCart,
-    },
-    {
-      label: "Avg Ticket Size",
-      value: fmtMoney(kpis.avgTicket),
-      change: kpis.ticketChange,
-      up: !kpis.ticketChange.startsWith("-"),
-      icon: TrendingUp,
-    },
-    {
-      label: "Cancellations",
-      value: kpis.cancels,
-      change: kpis.cancelChange,
-      up: kpis.cancelChange.startsWith("-"),
-      icon: XCircle,
-    },
-  ];
-
-  // Bar chart - Peak revenue calculation
   const activeKey = isDomestic ? "revenueKrw" : "revenueUsd";
-  const peakEntry = trendData.reduce((a, b) => (a[activeKey] > b[activeKey] ? a : b));
-  const coloredChartData = useMemo(() =>
-    trendData.map((e) => ({
-      ...e,
-      fill: e.label === peakEntry.label ? "#3b82f6" : tc.isDark ? "#374151" : "#cbd5e1",
-    })), [trendData, peakEntry.label, tc.isDark]);
+  const peakIdx = trendDataRaw.reduce(
+    (bestIdx, row, i, arr) => (row[activeKey] > arr[bestIdx][activeKey] ? i : bestIdx),
+    0,
+  );
+  const peakLabel = trendData[peakIdx]?.label ?? "";
+
+  const coloredChartData = useMemo(
+    () =>
+      trendData.map((e, i) => ({
+        ...e,
+        fill: i === peakIdx ? "#3b82f6" : tc.isDark ? "#374151" : "#cbd5e1",
+      })),
+    [trendData, peakIdx, tc.isDark],
+  );
+
+  const payLabel = (methodKey: PayMethod) =>
+    methodKey === "credit" ? t("dashboard.paymentCredit") : t("dashboard.paymentCash");
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-3">
-      <DateFilterBar
-        period={period}
-        setPeriod={setPeriod}
-        title="Sales Dashboard"
-      />
+      <DateFilterBar period={period} setPeriod={setPeriod} title={t("titles.dashboard")} />
 
-      <AnimatedContent
-        animationKey={period}
-        className="flex-1 min-h-0 flex flex-col gap-3"
-      >
-        {/* Total Revenue - full width top */}
+      <AnimatedContent animationKey={period} className="flex-1 min-h-0 flex flex-col gap-3">
         <div className={`${tc.card} rounded-xl p-4 sm:p-5`}>
           <div className="grid grid-cols-2 gap-4 sm:gap-5 items-center">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <p className={`text-[0.875rem] ${tc.subtext}`}>
-                  Total Revenue
-                </p>
+                <p className={`text-[0.875rem] ${tc.subtext}`}>{t("dashboard.totalRevenue")}</p>
                 <span
                   className={`flex items-center gap-0.5 text-[0.8125rem] ${!kpis.revChange.startsWith("-") ? "text-green-500" : "text-red-500"}`}
                 >
@@ -496,17 +340,19 @@ export function DashboardView() {
                   {kpis.revChange}
                 </span>
               </div>
-              <p
-                className={`text-[1.75rem] sm:text-[2.25rem] ${tc.heading} flex flex-col gap-1`}
-              >
+              <p className={`text-[1.5rem] sm:text-[2.25rem] ${tc.heading} flex flex-col gap-1`}>
                 {kpiDomestic.totalRev > 0 && (
-                  <span className="text-blue-600 text-right">₩{Math.round(kpiDomestic.totalRev).toLocaleString()}</span>
+                  <span className="text-blue-600 text-right">
+                    {formatDomesticWon(kpiDomestic.totalRev)}
+                  </span>
                 )}
                 {kpiForeign.totalRev > 0 && (
                   <span className="text-red-600 flex justify-between items-center">
-                  {kpiDomestic.totalRev > 0 && <span>+</span>}
-                  <span>${kpiForeign.totalRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </span>
+                    {kpiDomestic.totalRev > 0 && <span>+</span>}
+                    <span>
+                      {formatForeignUsd(kpiForeign.totalRev)}
+                    </span>
+                  </span>
                 )}
               </p>
             </div>
@@ -518,29 +364,24 @@ export function DashboardView() {
                 const amountUsd = (kpiForeign.totalRev * foreignItem.value) / 100;
                 const Icon = d.icon;
                 return (
-                  <div key={d.name}>
+                  <div key={d.methodKey}>
                     <div className="flex items-start justify-between mb-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <Icon
-                          className="w-4 h-4 shrink-0"
-                          style={{ color: d.fill }}
-                        />
-                        <span
-                          className={`text-[0.875rem] ${tc.text2} truncate`}
-                        >
-                          {d.name}
+                        <Icon className="w-4 h-4 shrink-0" style={{ color: d.fill }} />
+                        <span className={`text-[0.875rem] ${tc.text2} truncate`}>
+                          {payLabel(d.methodKey)}
                         </span>
                       </div>
                       <span
                         className={`text-[0.9375rem] ${tc.heading} shrink-0 flex flex-col items-end gap-0.5`}
                       >
                         {amountKrw > 0 && (
-                          <span className="text-blue-600">₩{amountKrw.toLocaleString()}</span>
+                          <span className="text-blue-600">{formatDomesticWon(amountKrw)}</span>
                         )}
                         {amountUsd > 0 && (
                           <span className="text-red-600 flex justify-between w-full">
                             {amountKrw > 0 && <span>+</span>}
-                            <span>${amountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span>{formatForeignUsd(amountUsd)}</span>
                           </span>
                         )}
                       </span>
@@ -555,52 +396,28 @@ export function DashboardView() {
           </div>
         </div>
 
-        {/* KPIs + Sales Trend */}
         <div className="flex flex-col gap-3 flex-1 min-h-0">
           <div className="grid grid-cols-3 gap-2">
             {kpiCards.map((kpi) => (
-              <div
-                key={kpi.label}
-                className={`${tc.card} rounded-xl p-4`}
-              >
+              <div key={kpi.label} className={`${tc.card} rounded-xl p-4`}>
                 <div className="flex items-center justify-between mb-2">
-                  <kpi.icon
-                    className={`w-4 h-4 ${tc.subtext}`}
-                  />
+                  <kpi.icon className={`w-4 h-4 ${tc.subtext}`} />
                   <span
                     className={`flex items-center gap-0.5 text-[0.8125rem] ${kpi.up ? "text-green-500" : "text-red-500"}`}
                   >
-                    {kpi.up ? (
-                      <TrendingUp className="w-3 h-3" />
-                    ) : (
-                      <TrendingDown className="w-3 h-3" />
-                    )}
+                    {kpi.up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                     {kpi.change}
                   </span>
                 </div>
-                <p className={`text-[1.5rem] ${tc.heading}`}>
-                  {kpi.value}
-                </p>
-                <p
-                  className={`text-[0.8125rem] ${tc.subtext} mt-0.5`}
-                >
-                  {kpi.label}
-                </p>
+                <p className={`text-[1.5rem] ${tc.heading}`}>{kpi.value}</p>
+                <p className={`text-[0.8125rem] ${tc.subtext} mt-0.5`}>{kpi.label}</p>
               </div>
             ))}
           </div>
 
-          <div
-            className={`${tc.card} rounded-xl p-4 sm:p-5 flex-1 min-h-[320px] flex flex-col`}
-          >
-            <h3 className={`text-[1rem] ${tc.heading}`}>
-              Sales Trend
-            </h3>
-            <p
-              className={`text-[0.875rem] ${tc.subtext} mt-0.5 mb-3`}
-            >
-              Tap on the chart to view revenue and order count
-            </p>
+          <div className={`${tc.card} rounded-xl p-4 sm:p-5 flex-1 min-h-[320px] flex flex-col`}>
+            <h3 className={`text-[1rem] ${tc.heading}`}>{t("dashboard.salesTrend")}</h3>
+            <p className={`text-[0.875rem] ${tc.subtext} mt-0.5 mb-3`}>{t("dashboard.salesTrendHint")}</p>
             <div className="flex-1 min-h-0">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
@@ -613,23 +430,9 @@ export function DashboardView() {
                   }}
                 >
                   <defs key="defs">
-                    <linearGradient
-                      id={`trendGrad-${period}`}
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="#3b82f6"
-                        stopOpacity={0.2}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="#3b82f6"
-                        stopOpacity={0}
-                      />
+                    <linearGradient id={`trendGrad-${period}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
@@ -651,18 +454,11 @@ export function DashboardView() {
                     axisLine={false}
                     tickLine={false}
                   />
-                  <Tooltip
-                    key="tooltip"
-                    content={
-                      <SalesTooltip isDomestic={isDomestic} />
-                    }
-                  />
+                  <Tooltip key="tooltip" content={<SalesTooltip isDomestic={isDomestic} />} />
                   <Area
                     key="area"
                     type="monotone"
-                    dataKey={
-                      isDomestic ? "revenueKrw" : "revenueUsd"
-                    }
+                    dataKey={isDomestic ? "revenueKrw" : "revenueUsd"}
                     stroke="#3b82f6"
                     fill={`url(#trendGrad-${period})`}
                     strokeWidth={2.5}
@@ -683,21 +479,41 @@ export function DashboardView() {
             </div>
           </div>
 
-          {/* Revenue over time - Bar Chart */}
           <div className={`${tc.card} rounded-xl p-4 sm:p-5 flex-1 min-h-[320px] flex flex-col`}>
             <p className={`text-[1rem] ${tc.heading} mb-1`}>
-              Peak revenue at <span className="text-blue-500">{peakEntry.label}</span>
+              <Trans
+                ns="analytics"
+                i18nKey="revenueAnalysis.peakRevenue"
+                values={{ label: peakLabel }}
+                components={{ highlight: <span className="text-blue-500" /> }}
+              />
             </p>
-            <p className={`text-[0.875rem] ${tc.subtext} mb-4`}>Revenue over time</p>
+            <p className={`text-[0.875rem] ${tc.subtext} mb-4`}>{t("dashboard.barOverTime")}</p>
             <div className="flex-1 min-h-[140px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={coloredChartData}>
                   <CartesianGrid key="grid" strokeDasharray="3 3" stroke={tc.gridStroke} vertical={false} />
-                  <XAxis key="xaxis" dataKey="label" tick={{ fontSize: 11, fill: tc.tickFill }} axisLine={false} tickLine={false} />
-                  <YAxis key="yaxis" tick={{ fontSize: 11, fill: tc.tickFill }} axisLine={false} tickLine={false} />
+                  <XAxis
+                    key="xaxis"
+                    dataKey="label"
+                    tick={{ fontSize: 11, fill: tc.tickFill }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    key="yaxis"
+                    tick={{ fontSize: 11, fill: tc.tickFill }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
                   <Tooltip key="tooltip" contentStyle={tc.tooltipStyle} />
-                  <Bar key="bar" dataKey={activeKey} radius={[6, 6, 0, 0]}
-                    shape={(props: any) => <Rectangle {...props} fill={props.fill} radius={[6, 6, 0, 0]} />}
+                  <Bar
+                    key="bar"
+                    dataKey={activeKey}
+                    radius={[6, 6, 0, 0]}
+                    shape={(props: Record<string, unknown>) => (
+                      <Rectangle {...props} fill={props.fill as string} radius={[6, 6, 0, 0]} />
+                    )}
                   />
                 </BarChart>
               </ResponsiveContainer>
