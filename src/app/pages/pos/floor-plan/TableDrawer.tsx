@@ -198,9 +198,6 @@ export function TableDrawer({
             transform: visible ? "translateY(0)" : "translateY(100%)",
           }}
         >
-          <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
-            <div className="w-10 h-1 rounded-full" style={{ background: C.text3 }} />
-          </div>
           {drawerContent}
         </div>
       </>
