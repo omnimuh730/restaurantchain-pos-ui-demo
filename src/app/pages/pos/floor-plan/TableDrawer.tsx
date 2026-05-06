@@ -65,7 +65,7 @@ export function TableDrawer({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" className="cursor-pointer" style={{ color: C.text3 }} aria-label={t("drawer.moreOptionsAria")}><MoreVertical size={18} /></button>
+          {/*<button type="button" className="cursor-pointer" style={{ color: C.text3 }} aria-label={t("drawer.moreOptionsAria")}><MoreVertical size={18} /></button>*/}
           <button type="button" onClick={onClose} className="cursor-pointer" style={{ color: C.text3 }} aria-label={t("drawer.closeAria")}><X size={18} /></button>
         </div>
       </div>
@@ -73,7 +73,7 @@ export function TableDrawer({
       <div style={{ height: 1, background: C.border }} />
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto min-h-[150px]">
         {sel.status === "occupied" && sel.orderItems && (
           <OrderItemsTable
             items={sel.orderItems.filter((it) => it.qty > 0).map((it) => ({ name: it.name, qty: it.qty, price: it.price, currency: "domestic" }))}
@@ -123,12 +123,8 @@ export function TableDrawer({
       {/* Footer */}
       {sel.status === "occupied" && sel.revenue && (
         <div className="p-5 flex-shrink-0">
-          <div className="flex justify-between mb-1">
-            <span style={{ color: C.text2 }}>{t("drawer.orderTotal", { count: sel.orderItems?.filter(it => it.qty > 0).reduce((a, b) => a + b.qty, 0) ?? 0 })}</span>
-            <span style={{ color: C.text1 }}>{formatDomesticWon(sel.revenue)}</span>
-          </div>
           <div className="flex justify-between">
-            <span className="font-bold" style={{ color: C.text1 }}>{t("drawer.paymentTotal")}</span>
+            <span className="font-bold" style={{ color: C.text1 }}>{t("drawer.orderTotal", { count: sel.orderItems?.filter(it => it.qty > 0).reduce((a, b) => a + b.qty, 0) ?? 0 })}</span>
             <span className="font-bold text-lg" style={{ color: C.text1 }}>{formatDomesticWon(sel.revenue)}</span>
           </div>
           <div className="flex gap-2 mt-4">
