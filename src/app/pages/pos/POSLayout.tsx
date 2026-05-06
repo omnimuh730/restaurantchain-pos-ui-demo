@@ -328,6 +328,7 @@ function POSLayoutInner() {
 }
 
 function ToastClearAll() {
+  const { t } = useTranslation("common");
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -357,9 +358,9 @@ function ToastClearAll() {
         color: "#1d4ed8",
       }}
       className="fixed right-5 top-2 px-3 py-[5px] rounded-full text-[0.6875rem] cursor-pointer hover:brightness-105 active:scale-95 transition-all"
-      aria-label={t("common:clearAllAria")}
+      aria-label={t("clearAllAria")}
     >
-      {t("common:clearAll")}
+      {t("clearAll")}
     </button>
   );
 }
