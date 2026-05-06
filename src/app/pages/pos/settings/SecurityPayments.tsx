@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useThemeClasses, useTheme, ROLE_NAV_ACCESS } from "../theme-context";
+import { useThemeClasses, useTheme } from "../theme-context";
 import { PAYMENT_CARDS as INITIAL_CARDS } from "./data";
 import { InlineModal, InlineToggle } from "./ui-helpers";
 import { useNavBadges } from "../NavBadgeContext";
@@ -11,7 +11,9 @@ export function SecurityPaymentsSettings({ passwordOnly = false }: { passwordOnl
   const tc = useThemeClasses();
   const { role } = useTheme();
   const { prefs, togglePref } = useNavBadges();
-  const canFloor = ROLE_NAV_ACCESS[role].includes("");
+  // Mirror the gate used by the toast emitter in NavBadgeContext so the toggle
+  // is shown to exactly the roles that can receive floor notifications.
+  const canFloor = role === "Admin" || role === "Waiter" || role === "Cashier";
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPw, setShowPw] = useState(false);

@@ -107,11 +107,31 @@ const INITIAL_BADGES: Partial<Record<NavId, number>> = {
   kitchen: INITIAL_ORDERS.filter((o) => o.status === "received").length,
 };
 
+// Notifications are opt-in: defaults are off and persisted across reloads
+// so the user is never surprised by background toasts.
+const NOTIFY_PREFS_KEY = "pos.notifyPrefs.v1";
+const DEFAULT_PREFS: NotifyPrefs = { floor: false, kitchen: false };
+
+function readStoredPrefs(): NotifyPrefs {
+  if (typeof window === "undefined") return DEFAULT_PREFS;
+  try {
+    const raw = window.localStorage.getItem(NOTIFY_PREFS_KEY);
+    if (!raw) return DEFAULT_PREFS;
+    const parsed = JSON.parse(raw) as Partial<NotifyPrefs>;
+    return {
+      floor: typeof parsed.floor === "boolean" ? parsed.floor : DEFAULT_PREFS.floor,
+      kitchen: typeof parsed.kitchen === "boolean" ? parsed.kitchen : DEFAULT_PREFS.kitchen,
+    };
+  } catch {
+    return DEFAULT_PREFS;
+  }
+}
+
 const NavBadgeContext = createContext<NavBadgeValue>({
   badges: {},
   setBadge: () => {},
   serverCalls: [],
-  prefs: { floor: true, kitchen: true },
+  prefs: DEFAULT_PREFS,
   togglePref: () => {},
 });
 
@@ -119,7 +139,16 @@ export function NavBadgeProvider({ children }: { children: ReactNode }) {
   const { role } = useTheme();
   const notifiableRole = role === "Admin" || role === "Waiter" || role === "Cashier";
   const [badges, setBadges] = useState<Partial<Record<NavId, number>>>(INITIAL_BADGES);
-  const [prefs, setPrefs] = useState<NotifyPrefs>({ floor: true, kitchen: true });
+  const [prefs, setPrefs] = useState<NotifyPrefs>(readStoredPrefs);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(NOTIFY_PREFS_KEY, JSON.stringify(prefs));
+    } catch {
+      /* ignore quota / privacy mode */
+    }
+  }, [prefs]);
 
   const setBadge = useCallback((id: NavId, n: number) => {
     setBadges((prev) => (prev[id] === n ? prev : { ...prev, [id]: n }));
