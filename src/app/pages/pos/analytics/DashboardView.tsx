@@ -321,7 +321,9 @@ export function DashboardView() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-3">
-      <DateFilterBar period={period} setPeriod={setPeriod} title={t("titles.dashboard")} />
+      <div className={`${tc.card} rounded-xl p-3 sm:p-4`}>
+        <DateFilterBar period={period} setPeriod={setPeriod} title={t("titles.dashboard")} />
+      </div>
 
       <AnimatedContent animationKey={period} className="flex-1 min-h-0 flex flex-col gap-3">
         <div className={`${tc.card} rounded-xl p-4 sm:p-5`}>

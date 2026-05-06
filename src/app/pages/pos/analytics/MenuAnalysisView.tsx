@@ -154,7 +154,9 @@ export function MenuAnalysisView() {
   if (poolItems.length === 0) {
     return (
       <div className="space-y-4">
-        <DateFilterBar period={period} setPeriod={setPeriod} title={t("titles.menuAnalysis")} />
+        <div className={`${tc.card} rounded-xl p-3 sm:p-4`}>
+          <DateFilterBar period={period} setPeriod={setPeriod} title={t("titles.menuAnalysis")} />
+        </div>
         <div className={`${tc.card} rounded-xl p-10 text-center ${tc.muted} text-[0.875rem]`}>
           {t("menuAnalysis.noItemsSold", {
             pool: t(activeCur === "domestic" ? "menuAnalysis.poolDomestic" : "menuAnalysis.poolForeign"),
@@ -166,7 +168,9 @@ export function MenuAnalysisView() {
 
   return (
     <div className="space-y-4">
-      <DateFilterBar period={period} setPeriod={setPeriod} title={t("titles.menuAnalysis")} />
+      <div className={`${tc.card} rounded-xl p-3 sm:p-4`}>
+        <DateFilterBar period={period} setPeriod={setPeriod} title={t("titles.menuAnalysis")} />
+      </div>
 
       <AnimatedContent animationKey={`${period}-${activeCur}`} className="space-y-4">
         <div className={`${tc.card} rounded-xl p-4 sm:p-5`}>

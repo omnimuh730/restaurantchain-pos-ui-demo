@@ -256,7 +256,9 @@ export function CustomerAnalysisView() {
 
   return (
     <div className="space-y-4">
-      <DateFilterBar period={period} setPeriod={setPeriod} title={t("titles.customerAnalysis")} />
+      <div className={`${tc.card} rounded-xl p-3 sm:p-4`}>
+        <DateFilterBar period={period} setPeriod={setPeriod} title={t("titles.customerAnalysis")} />
+      </div>
 
       <AnimatedContent animationKey={period} className="space-y-4">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">

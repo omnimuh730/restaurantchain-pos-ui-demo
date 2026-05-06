@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import {
   Search, Receipt, Calendar, CreditCard, UserX, UserPlus, X,
-  Clock, Users, MapPin, Banknote, Hash, ArrowLeft, List, FileText,
+  Clock, Users, MapPin, Banknote, Hash, ArrowLeft,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -103,7 +103,6 @@ export function HistoryView() {
   const [customRange, setCustomRange] = useState<DateRange | null>(null);
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"compact" | "receipts">("compact");
 
   // Draggable tabs
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -130,7 +129,6 @@ export function HistoryView() {
 
   const q = search.trim().toLowerCase();
   const isSearching = q.length > 0;
-  const effectiveView: "compact" | "receipts" = isSearching ? "receipts" : viewMode;
 
   const filtered = useMemo(() => {
     const now = Date.now();
@@ -200,66 +198,14 @@ export function HistoryView() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
-      {/* Filter bar */}
+      {/* Filter bar — date range only */}
       <div className={`${tc.card} rounded-xl p-3 sm:p-4`}>
-        <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-          
-          <DateFilterBar
-            period={period}
-            setPeriod={setPeriod}
-            onRangeChange={setCustomRange}
-            title={t("titles.history")}
-          />
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md flex-1 min-w-[180px] ${tc.isDark ? "bg-slate-800" : "bg-slate-100"}`}>
-            <Search className={`w-3.5 h-3.5 ${tc.muted}`} />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t("history.searchPlaceholder")}
-              className={`flex-1 bg-transparent outline-none text-[0.8125rem] ${tc.text1}`}
-            />
-            {search && (
-              <button onClick={() => setSearch("")} className={`cursor-pointer ${tc.muted} hover:opacity-80`}>
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
-        {/* Tabs — draggable, hidden scrollbar */}
-        <div
-          ref={tabsRef}
-          onPointerDown={onTabsPointerDown}
-          onPointerMove={onTabsPointerMove}
-          onPointerUp={onTabsPointerUp}
-          onPointerCancel={onTabsPointerUp}
-          className="flex items-center gap-1 mt-3 overflow-x-auto select-none cursor-grab active:cursor-grabbing [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {tabItems.map((row) => {
-            const active = tab === row.id;
-            return (
-              <button
-                key={row.id}
-                onClick={(e) => {
-                  if (tabsDragRef.current?.moved) { e.preventDefault(); return; }
-                  setTab(row.id);
-                }}
-                className={`shrink-0 px-3 py-1.5 rounded-md text-[0.8125rem] cursor-pointer transition-colors flex items-center gap-1.5 ${
-                  active
-                    ? `${tc.isDark ? "bg-slate-700 text-white" : "bg-slate-900 text-white"}`
-                    : `${tc.subtext} ${tc.hover}`
-                }`}
-              >
-                {row.label}
-                <span className={`text-[0.6875rem] px-1.5 rounded-full ${
-                  active ? "bg-white/20" : tc.isDark ? "bg-slate-700/60" : "bg-slate-200"
-                }`}>{counts[row.id] ?? 0}</span>
-              </button>
-            );
-          })}
-        </div>
+        <DateFilterBar
+          period={period}
+          setPeriod={setPeriod}
+          onRangeChange={setCustomRange}
+          title={t("titles.history")}
+        />
       </div>
 
       {/* KPI strip */}
@@ -288,45 +234,74 @@ export function HistoryView() {
       <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[1fr_360px] gap-3 overflow-hidden">
         {/* List / Receipts column */}
         <div className={`${tc.card} rounded-xl flex flex-col min-h-0 overflow-hidden`}>
-          <div className={`shrink-0 px-3 sm:px-4 py-2.5 border-b ${tc.cardBorder} flex items-center justify-between gap-2`}>
-            <span className={`text-[0.75rem] ${tc.subtext}`}>
+          <div className={`shrink-0 border-b ${tc.cardBorder} px-3 sm:px-4 py-3 space-y-3`}>
+            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md w-full ${tc.isDark ? "bg-slate-800" : "bg-slate-100"}`}>
+              <Search className={`w-3.5 h-3.5 shrink-0 ${tc.muted}`} />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t("history.searchPlaceholder")}
+                className={`flex-1 min-w-0 bg-transparent outline-none text-[0.8125rem] ${tc.text1}`}
+              />
+              {search && (
+                <button type="button" onClick={() => setSearch("")} className={`shrink-0 cursor-pointer ${tc.muted} hover:opacity-80`}>
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <div
+              ref={tabsRef}
+              onPointerDown={onTabsPointerDown}
+              onPointerMove={onTabsPointerMove}
+              onPointerUp={onTabsPointerUp}
+              onPointerCancel={onTabsPointerUp}
+              className="flex items-center gap-1 overflow-x-auto select-none cursor-grab active:cursor-grabbing [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-0.5 px-0.5"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {tabItems.map((row) => {
+                const active = tab === row.id;
+                return (
+                  <button
+                    key={row.id}
+                    type="button"
+                    onClick={(e) => {
+                      if (tabsDragRef.current?.moved) {
+                        e.preventDefault();
+                        return;
+                      }
+                      setTab(row.id);
+                    }}
+                    className={`shrink-0 px-3 py-1.5 rounded-md text-[0.8125rem] cursor-pointer transition-colors flex items-center gap-1.5 ${
+                      active
+                        ? `${tc.isDark ? "bg-slate-700 text-white" : "bg-slate-900 text-white"}`
+                        : `${tc.subtext} ${tc.hover}`
+                    }`}
+                  >
+                    {row.label}
+                    <span
+                      className={`text-[0.6875rem] px-1.5 rounded-full ${
+                        active ? "bg-white/20" : tc.isDark ? "bg-slate-700/60" : "bg-slate-200"
+                      }`}
+                    >
+                      {counts[row.id] ?? 0}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className={`text-[0.75rem] ${tc.subtext}`}>
               {t("history.showingResults", { count: filtered.length })}
               {isSearching && (
                 <span className={`ml-1.5 ${tc.muted}`}>
                   {t("history.forQuery")}&quot;{search}&quot;
                 </span>
               )}
-            </span>
-            {/* View-mode tab */}
-            <div className={`flex items-center rounded-md p-0.5 ${tc.isDark ? "bg-slate-800" : "bg-slate-100"}`}>
-              <button
-                onClick={() => setViewMode("compact")}
-                disabled={isSearching}
-                className={`flex items-center gap-1 px-2 py-1 rounded text-[0.75rem] cursor-pointer transition-colors ${
-                  effectiveView === "compact"
-                    ? tc.isDark ? "bg-slate-700 text-white" : "bg-white text-slate-900 shadow-sm"
-                    : tc.subtext
-                } ${isSearching ? "opacity-50 cursor-not-allowed" : ""}`}
-                title={isSearching ? t("history.receiptsSearchTitle") : t("history.compactTitle")}
-              >
-                <List className="w-3 h-3" /><span className="hidden sm:inline">{t("history.compact")}</span>
-              </button>
-              <button
-                onClick={() => setViewMode("receipts")}
-                className={`flex items-center gap-1 px-2 py-1 rounded text-[0.75rem] cursor-pointer transition-colors ${
-                  effectiveView === "receipts"
-                    ? tc.isDark ? "bg-slate-700 text-white" : "bg-white text-slate-900 shadow-sm"
-                    : tc.subtext
-                }`}
-              >
-                <FileText className="w-3 h-3" /><span className="hidden sm:inline">{t("history.receipts")}</span>
-              </button>
-            </div>
+            </p>
           </div>
-          <div className={`flex-1 min-h-0 overflow-y-auto ${effectiveView === "receipts" ? "p-3 sm:p-4 space-y-3" : ""}`}>
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 space-y-3">
             {filtered.length === 0 ? (
               <div className={`p-10 text-center text-[0.875rem] ${tc.muted}`}>{t("history.noMatch")}</div>
-            ) : effectiveView === "receipts" ? (
+            ) : (
               filtered.map((e) => (
                 <ReceiptCard
                   key={e.id}
@@ -336,54 +311,6 @@ export function HistoryView() {
                   isSelected={selected?.id === e.id}
                 />
               ))
-            ) : (
-              filtered.map((e) => {
-                const Icon = kindIcon(e.kind);
-                const accent = kindAccent(e.kind, tc.isDark);
-                const badge = statusBadge(e.status, tc.isDark, t);
-                const isSel = selected?.id === e.id;
-                const lineTotals = eventReceiptTotals(e);
-                return (
-                  <button
-                    key={e.id}
-                    onClick={() => setSelectedId(e.id)}
-                    className={`w-full text-left px-3 sm:px-4 py-3 flex items-start gap-3 cursor-pointer transition-colors border-b ${tc.cardBorder} last:border-b-0 ${
-                      isSel
-                        ? tc.isDark ? "bg-blue-500/10" : "bg-blue-50"
-                        : tc.hover
-                    }`}
-                  >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${accent}`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[0.875rem] ${tc.heading}`}>{guestLabel(t, e.guestKey)}</span>
-                        <span className={`text-[0.6875rem] px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.label}</span>
-                      </div>
-                      <div className={`text-[0.75rem] ${tc.subtext} mt-0.5 flex items-center gap-x-2 gap-y-0.5 flex-wrap`}>
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />
-                          {tableLabel(t, e)}
-                        </span>
-                        {e.partySize != null && (
-                          <span className="inline-flex items-center gap-1">
-                            <Users className="w-3 h-3" />
-                            {t("history.partyBadge", { count: e.partySize })}
-                          </span>
-                        )}
-                        <span className="inline-flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {relDay(e.timestamp, t)} · {fmtTime(e.timestamp)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className={`text-[0.875rem] ${tc.heading} shrink-0 tabular-nums text-right max-w-[min(100%,11rem)]`}>
-                      <HistoryReceiptTotalAmounts krw={lineTotals.krw} usd={lineTotals.usd} />
-                    </div>
-                  </button>
-                );
-              })
             )}
           </div>
         </div>
