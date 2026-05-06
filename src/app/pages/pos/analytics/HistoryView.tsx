@@ -342,6 +342,7 @@ export function HistoryView() {
                 const accent = kindAccent(e.kind, tc.isDark);
                 const badge = statusBadge(e.status, tc.isDark, t);
                 const isSel = selected?.id === e.id;
+                const lineTotals = eventReceiptTotals(e);
                 return (
                   <button
                     key={e.id}
@@ -377,7 +378,9 @@ export function HistoryView() {
                         </span>
                       </div>
                     </div>
-                    <div className={`text-[0.875rem] ${tc.heading} shrink-0 tabular-nums`}>{pick({ usd: e.amount, krw: e.amountKrw })}</div>
+                    <div className={`text-[0.875rem] ${tc.heading} shrink-0 tabular-nums text-right max-w-[min(100%,11rem)]`}>
+                      <HistoryReceiptTotalAmounts krw={lineTotals.krw} usd={lineTotals.usd} />
+                    </div>
                   </button>
                 );
               })
@@ -443,15 +446,38 @@ function fmtLine(value: number, cur?: "foreign" | "domestic"): string {
   return formatForeignUsd(value);
 }
 
+function eventReceiptTotals(event: HistoryEvent): { usd: number; krw: number } {
+  const subtotalUsd =
+    event.items?.filter((i) => (i.currency ?? "foreign") === "foreign").reduce((s, i) => s + i.qty * i.price, 0) ?? 0;
+  const subtotalKrw = event.items?.filter((i) => i.currency === "domestic").reduce((s, i) => s + i.qty * i.price, 0) ?? 0;
+  return {
+    usd: event.amount ?? subtotalUsd,
+    krw: event.amountKrw ?? subtotalKrw,
+  };
+}
+
+function HistoryReceiptTotalAmounts({ krw, usd }: { krw: number; usd: number }) {
+  const showKrw = krw > 0;
+  const showUsd = usd > 0;
+  if (!showKrw && !showUsd) {
+    return <span className="tabular-nums">—</span>;
+  }
+  return (
+    <>
+      {showKrw && <span className="text-blue-600">{formatDomesticWon(krw)}</span>}
+      {showKrw && showUsd && " + "}
+      {showUsd && <span className="text-red-600">{formatForeignUsd(usd)}</span>}
+    </>
+  );
+}
+
 function ReceiptCard({ event, query, onOpen, isSelected }: ReceiptCardProps) {
   const { t } = useTranslation("analytics");
   const tc = useThemeClasses();
-  const { pick } = useAnalyticsCurrency();
   const Icon = kindIcon(event.kind);
   const accent = kindAccent(event.kind, tc.isDark);
   const badge = statusBadge(event.status, tc.isDark, t);
-  const subtotalUsd = event.items?.filter((i) => (i.currency ?? "foreign") === "foreign").reduce((s, i) => s + i.qty * i.price, 0) ?? 0;
-  const subtotalKrw = event.items?.filter((i) => i.currency === "domestic").reduce((s, i) => s + i.qty * i.price, 0) ?? 0;
+  const { usd: totalUsd, krw: totalKrw } = eventReceiptTotals(event);
 
   return (
     <button
@@ -489,8 +515,10 @@ function ReceiptCard({ event, query, onOpen, isSelected }: ReceiptCardProps) {
             )}
           </div>
         </div>
-        <div className="text-right shrink-0">
-          <div className={`text-[0.9375rem] ${tc.heading} tabular-nums`}>{pick({ usd: event.amount, krw: event.amountKrw })}</div>
+        <div className="text-right shrink-0 max-w-[min(100%,11rem)]">
+          <div className={`text-[0.9375rem] ${tc.heading} tabular-nums`}>
+            <HistoryReceiptTotalAmounts krw={totalKrw} usd={totalUsd} />
+          </div>
         </div>
       </div>
 
@@ -518,17 +546,9 @@ function ReceiptCard({ event, query, onOpen, isSelected }: ReceiptCardProps) {
             })}
           </div>
           <div className={`mt-2 pt-2 border-t ${tc.cardBorder} flex items-center justify-between gap-3 text-[0.75rem] flex-wrap`}>
-            <div className={`flex items-center gap-2 ${tc.subtext} flex-wrap`}>
-              {subtotalKrw > 0 && <span>{t("history.receipt.subtotalDomestic")}: {formatDomesticWon(subtotalKrw)}</span>}
-              {subtotalKrw > 0 && subtotalUsd > 0 && <span>·</span>}
-              {subtotalUsd > 0 && (
-                <span>
-                  {t("history.receipt.subtotalForeign")}: {formatForeignUsd(subtotalUsd)}
-                </span>
-              )}
-            </div>
-            <div className={`text-[0.875rem] ${tc.heading} tabular-nums`}>
-              {t("history.receipt.total")} {pick({ usd: event.amount ?? subtotalUsd, krw: event.amountKrw ?? subtotalKrw })}
+            <span className={`${tc.subtext}`}>{t("history.receipt.total")}</span>
+            <div className={`text-[0.875rem] ${tc.heading} tabular-nums text-right`}>
+              <HistoryReceiptTotalAmounts krw={totalKrw} usd={totalUsd} />
             </div>
           </div>
         </div>
@@ -572,8 +592,7 @@ function DetailPane({ event, linkedEvent, replacement, tcIsDark }: DetailPanePro
   const Icon = kindIcon(event.kind);
   const accent = kindAccent(event.kind, tcIsDark);
   const badge = statusBadge(event.status, tcIsDark, t);
-  const subtotalUsd = event.items?.filter((i) => (i.currency ?? "foreign") === "foreign").reduce((s, i) => s + i.qty * i.price, 0) ?? 0;
-  const subtotalKrw = event.items?.filter((i) => i.currency === "domestic").reduce((s, i) => s + i.qty * i.price, 0) ?? 0;
+  const { usd: totalUsd, krw: totalKrw } = eventReceiptTotals(event);
   const dash = t("history.detail.dash");
 
   return (
@@ -633,22 +652,12 @@ function DetailPane({ event, linkedEvent, replacement, tcIsDark }: DetailPanePro
                   </div>
                 );
               })}
-              <div className={`px-3 py-2 border-t ${tc.cardBorder} space-y-1`}>
-                {subtotalKrw > 0 && (
-                  <div className={`flex justify-between text-[0.75rem] ${tc.subtext}`}>
-                    <span>{t("history.detail.subtotalDomestic")}</span>
-                    <span className="tabular-nums">{formatDomesticWon(subtotalKrw)}</span>
-                  </div>
-                )}
-                {subtotalUsd > 0 && (
-                  <div className={`flex justify-between text-[0.75rem] ${tc.subtext}`}>
-                    <span>{t("history.detail.subtotalForeign")}</span>
-                    <span className="tabular-nums">{formatForeignUsd(subtotalUsd)}</span>
-                  </div>
-                )}
-                <div className={`flex justify-between text-[0.875rem] ${tc.heading}`}>
+              <div className={`px-3 py-2 border-t ${tc.cardBorder}`}>
+                <div className={`flex justify-between items-baseline gap-2 text-[0.875rem] ${tc.heading}`}>
                   <span>{t("history.detail.total")}</span>
-                  <span className="tabular-nums">{pick({ usd: event.amount ?? subtotalUsd, krw: event.amountKrw ?? subtotalKrw })}</span>
+                  <span className="tabular-nums text-right">
+                    <HistoryReceiptTotalAmounts krw={totalKrw} usd={totalUsd} />
+                  </span>
                 </div>
               </div>
             </div>
