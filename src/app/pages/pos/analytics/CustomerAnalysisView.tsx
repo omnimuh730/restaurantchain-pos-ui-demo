@@ -255,7 +255,7 @@ export function CustomerAnalysisView() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-4">
       <DateFilterBar period={period} setPeriod={setPeriod} title={t("titles.customerAnalysis")} />
 
       <AnimatedContent animationKey={period} className="space-y-4">

@@ -39,7 +39,7 @@ export default function Analytics() {
     const el = contentRef.current;
     if (!el) return;
     const BASE = 900;
-    const MIN_SCALE = 0.88;
+    const MIN_SCALE = 1;
     const update = () => {
       const w = el.clientWidth;
       if (!w) return;

@@ -75,7 +75,7 @@
   },
   "menuAnalysis": {
     "noItemsSold": "No {{pool}} menu items sold in this period.",
-    "poolDomestic": "domestic (원)",
+    "poolDomestic": "domestic (₩)",
     "poolForeign": "foreign ($)",
     "topCategoryLoved": "The <highlight>{{category}}</highlight> category is loved the most in {{currency}}!",
     "categoryBreakdownSubtitle": "Category breakdown — independent pool",
@@ -90,7 +90,7 @@
     "colSold": "Sold",
     "colRevenue": "Revenue",
     "weeklyTrend": "Weekly sales trend",
-    "topSellerDomestic": "Top domestic (원) seller this week",
+    "topSellerDomestic": "Top domestic (₩) seller this week",
     "topSellerForeign": "Top foreign ($) seller this week",
     "dash": "—",
     "categoryIntro": "{{pool}} — category breakdown (independent pool)"
@@ -157,7 +157,7 @@
     "barOverTime": "Revenue over time",
     "paymentCredit": "Credit",
     "paymentCash": "Cash",
-    "totalRevCombined": "Total revenue (원 and $ tracked separately)"
+    "totalRevCombined": "Total revenue (₩ and $ tracked separately)"
   },
   "customer": {
     "totalCustomers": "Total Customers",
@@ -248,7 +248,7 @@
       "colQty": "Qty",
       "colEach": "Each",
       "colTotal": "Total",
-      "subtotalDomestic": "Subtotal (원)",
+      "subtotalDomestic": "Subtotal (₩)",
       "subtotalForeign": "Subtotal ($)",
       "total": "Total",
       "noReceiptNoShow": "No receipt — no-show event.",

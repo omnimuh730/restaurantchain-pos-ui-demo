@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { formatDomesticWon, formatForeignUsd } from "../../../../i18n/formatMoney";
+import { domesticCurrencyInputGlyph, formatDomesticWon, formatForeignUsd } from "../../../../i18n/formatMoney";
 
 export type MoneyCurrency = "foreign" | "domestic";
 
@@ -29,11 +29,12 @@ function formatFor(currency: MoneyCurrency, value: number | undefined | null): s
 }
 
 export function AnalyticsCurrencyProvider({ children }: { children: ReactNode }) {
+  useTranslation();
   const [currency, setCurrency] = useState<MoneyCurrency>("domestic");
   const fmt = (value: number | undefined | null) => formatFor(currency, value);
   const pick = (amt: MoneyAmount) =>
     currency === "domestic" ? formatFor("domestic", amt.krw) : formatFor("foreign", amt.usd);
-  const symbol = currency === "domestic" ? "원" : "$";
+  const symbol = currency === "domestic" ? domesticCurrencyInputGlyph() : "$";
   return (
     <Ctx.Provider
       value={{ currency, setCurrency, fmt, pick, symbol, isDomestic: currency === "domestic" }}
@@ -49,7 +50,7 @@ export function useAnalyticsCurrency(): CurrencyCtx {
     return {
       currency: "domestic",
       setCurrency: () => {},
-      symbol: "원",
+      symbol: domesticCurrencyInputGlyph(),
       isDomestic: true,
       fmt: (value) => formatFor("domestic", value),
       pick: (amt) => formatFor("domestic", amt.krw),

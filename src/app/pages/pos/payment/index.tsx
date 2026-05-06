@@ -4,7 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { motion } from "motion/react";
 import { ArrowLeft, Banknote, Check, CreditCard, Split, X, AlertCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { formatDomesticWon, formatForeignUsd } from "../../../../i18n/formatMoney";
+import { domesticCurrencyInputGlyph, formatDomesticWon, formatForeignUsd } from "../../../../i18n/formatMoney";
 import { useThemeClasses } from "../theme-context";
 import cashImage from "../../../../imports/cash-payment.svg";
 
@@ -269,7 +269,7 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
       <div>
         <div className="relative">
           <span className={`absolute left-2.5 top-1/2 -translate-y-1/2 text-[0.8125rem] ${isKrw ? "text-blue-600" : "text-red-600"}`}>
-            {isKrw ? "원" : "$"}
+            {isKrw ? domesticCurrencyInputGlyph() : "$"}
           </span>
           <input
             value={value}
