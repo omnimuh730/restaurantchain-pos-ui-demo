@@ -8,6 +8,12 @@
     "mix": "Mix"
   },
   "cardNumber": "Card Number",
+  "scanCardFromQr": "Open card QR reader",
+  "qrReaderTitle": "Scan card QR",
+  "qrReaderScanningStatus": "Scanning QR code…",
+  "qrReaderDetecting": "Detecting…",
+  "qrReaderCardFilled": "Card number filled from QR.",
+  "qrReaderClose": "Close",
   "password": "Password",
   "proceed": "Proceed",
   "swipeToCard": "Swipe to card payment",

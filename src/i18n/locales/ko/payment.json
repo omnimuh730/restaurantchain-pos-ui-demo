@@ -8,6 +8,12 @@
     "mix": "분할결제"
   },
   "cardNumber": "카드 번호",
+  "scanCardFromQr": "카드 QR 리더 열기",
+  "qrReaderTitle": "카드 QR 스캔",
+  "qrReaderScanningStatus": "QR 코드 스캔 중…",
+  "qrReaderDetecting": "인식 중…",
+  "qrReaderCardFilled": "QR에서 카드 번호를 입력했습니다.",
+  "qrReaderClose": "닫기",
   "password": "비밀번호",
   "proceed": "진행",
   "swipeToCard": "카드 결제로 이동",

@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { QRCodeSVG } from "qrcode.react";
 import { motion } from "motion/react";
-import { ArrowLeft, Banknote, Check, CreditCard, Split, X, AlertCircle } from "lucide-react";
+import { ArrowLeft, Banknote, Check, CreditCard, Loader2, QrCode, Split, X, AlertCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { domesticCurrencyInputGlyph, formatDomesticWon, formatForeignUsd } from "../../../../i18n/formatMoney";
 import { useThemeClasses } from "../theme-context";
 import cashImage from "../../../../imports/cash-payment.svg";
@@ -56,6 +57,9 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
   const [creditView, setCreditView] = useState<0 | 1>(0);
   const [cardNumber, setCardNumber] = useState("");
   const [cardPassword, setCardPassword] = useState("");
+  const [cardQrReaderOpen, setCardQrReaderOpen] = useState(false);
+  const [cardQrScanAnimating, setCardQrScanAnimating] = useState(false);
+  const cardQrSimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [processingStep, setProcessingStep] = useState<number | null>(null);
 
   const processingSteps = t("processingSteps", { returnObjects: true }) as string[];
@@ -75,6 +79,53 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
 
   const VALID_CARD = "1111111111111111";
   const VALID_PWD = "12345678";
+  /** Simulated read duration (ms); ~2–3s per product demo. */
+  const CARD_QR_SIM_MS = 2800;
+
+  const closeCardQrReader = useCallback(() => {
+    if (cardQrSimTimerRef.current != null) {
+      clearTimeout(cardQrSimTimerRef.current);
+      cardQrSimTimerRef.current = null;
+    }
+    setCardQrScanAnimating(false);
+    setCardQrReaderOpen(false);
+  }, []);
+
+  const startCardQrScanSequence = useCallback(() => {
+    if (cardQrSimTimerRef.current != null) {
+      clearTimeout(cardQrSimTimerRef.current);
+      cardQrSimTimerRef.current = null;
+    }
+    setCardQrScanAnimating(true);
+    cardQrSimTimerRef.current = setTimeout(() => {
+      cardQrSimTimerRef.current = null;
+      setCardNumber(VALID_CARD);
+      setCardQrScanAnimating(false);
+      setCardQrReaderOpen(false);
+      toast.success(t("qrReaderCardFilled"));
+    }, CARD_QR_SIM_MS);
+  }, [t]);
+
+  const openCardQrReaderFromInput = () => {
+    setCardQrReaderOpen(true);
+    startCardQrScanSequence();
+  };
+
+  useEffect(() => {
+    if (!cardQrReaderOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeCardQrReader();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [cardQrReaderOpen, closeCardQrReader]);
+
+  useEffect(() => {
+    return () => {
+      if (cardQrSimTimerRef.current != null) clearTimeout(cardQrSimTimerRef.current);
+    };
+  }, []);
+
   const BALANCE_LIMIT_KRW = 1_000_000;
   const BALANCE_LIMIT_USD = 1_000;
 
@@ -359,24 +410,39 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
                           <div className={`w-full max-w-xs rounded-xl p-5 border ${tc.isDark ? "border-slate-700 bg-slate-800/40" : "border-slate-200 bg-white"} space-y-4`}>
                             <div>
                               <label className={`block mb-1.5 ${tc.subtle}`}>{t("cardNumber")}</label>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                autoComplete="off"
-                                value={maskCard(cardNumber)}
-                                onChange={(e) => {
-                                  const newDigits = e.target.value.replace(/[^0-9]/g, "");
-                                  if (newDigits.length > 0) {
-                                    setCardNumber((prev) => (prev + newDigits).slice(0, 16));
-                                  } else {
-                                    const prevMaskedLen = maskCard(cardNumber).length;
-                                    const removed = Math.max(1, prevMaskedLen - e.target.value.length);
-                                    setCardNumber((prev) => prev.slice(0, Math.max(0, prev.length - removed)));
-                                  }
-                                }}
-                                placeholder="****-****-****-****"
-                                className={`${tc.input} tracking-widest`}
-                              />
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  autoComplete="off"
+                                  value={maskCard(cardNumber)}
+                                  onChange={(e) => {
+                                    const newDigits = e.target.value.replace(/[^0-9]/g, "");
+                                    if (newDigits.length > 0) {
+                                      setCardNumber((prev) => (prev + newDigits).slice(0, 16));
+                                    } else {
+                                      const prevMaskedLen = maskCard(cardNumber).length;
+                                      const removed = Math.max(1, prevMaskedLen - e.target.value.length);
+                                      setCardNumber((prev) => prev.slice(0, Math.max(0, prev.length - removed)));
+                                    }
+                                  }}
+                                  placeholder="****-****-****-****"
+                                  className={`${tc.input} tracking-widest pr-11 sm:pr-12 w-full`}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={openCardQrReaderFromInput}
+                                  className={`absolute right-1 top-1/2 flex h-10 w-10 shrink-0 -translate-y-1/2 items-center justify-center rounded-lg transition-colors cursor-pointer ${
+                                    tc.isDark
+                                      ? "text-blue-400 hover:bg-slate-700/80"
+                                      : "text-blue-600 hover:bg-blue-50"
+                                  }`}
+                                  aria-label={t("scanCardFromQr")}
+                                  title={t("scanCardFromQr")}
+                                >
+                                  <QrCode className="h-5 w-5" aria-hidden />
+                                </button>
+                              </div>
                             </div>
                             <div>
                               <label className={`block mb-1.5 ${tc.subtle}`}>{t("password")}</label>
@@ -561,9 +627,136 @@ export default function PaymentPage(props: PaymentPageProps = {}) {
           </div>
         )}
       </div>
+      {cardQrReaderOpen && (
+        <div
+          className={`fixed inset-0 z-[55] flex flex-col ${tc.isDark ? "bg-[#1e2028]" : "bg-white"}`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="card-qr-reader-title"
+        >
+          <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 shrink-0 min-h-[3rem]">
+            <h2 id="card-qr-reader-title" className={`text-[1rem] font-semibold ${tc.heading}`}>
+              {t("qrReaderTitle")}
+            </h2>
+            <button
+              type="button"
+              onClick={closeCardQrReader}
+              className={`p-2 rounded-xl transition-colors cursor-pointer ${tc.isDark ? "hover:bg-[#3a3f4d] text-gray-300" : "hover:bg-gray-100 text-gray-600"}`}
+              aria-label={t("qrReaderClose")}
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="flex-1 flex flex-col min-h-0 px-6 w-full max-w-md mx-auto">
+            <div className="flex-1 flex flex-col items-center justify-center min-h-0 w-full">
+              <div
+                className={`relative w-[min(78vw,312px)] aspect-square rounded-3xl overflow-hidden shrink-0 shadow-inner ${
+                  tc.isDark ? "bg-[#2a2d35] shadow-none ring-1 ring-gray-700" : "bg-gray-100 ring-1 ring-gray-200/80"
+                }`}
+              >
+                <div
+                  className={`absolute inset-0 z-[1] ${tc.isDark ? "bg-[#2a2d35]" : "bg-gray-100"}`}
+                >
+                  {cardQrScanAnimating && (
+                    <>
+                      <div className="pointer-events-none absolute inset-0 z-[8] flex items-center justify-center">
+                        <div
+                          className={`relative h-16 w-[4.5rem] ${tc.isDark ? "text-blue-400" : "text-blue-600"}`}
+                          aria-hidden
+                        >
+                          <span className="absolute left-0 top-0 h-4 w-4 rounded-tl border-t-2 border-l-2 opacity-90" />
+                          <span className="absolute right-0 top-0 h-4 w-4 rounded-tr border-t-2 border-r-2 opacity-90" />
+                          <span className="absolute bottom-0 left-0 h-4 w-4 rounded-bl border-b-2 border-l-2 opacity-90" />
+                          <span className="absolute right-0 bottom-0 h-4 w-4 rounded-br border-b-2 border-r-2 opacity-90" />
+                          <span className="absolute top-1/2 left-1/2 h-[2px] w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current opacity-75" />
+                        </div>
+                      </div>
+                      <motion.div
+                        className={`pointer-events-none absolute left-[10%] right-[10%] z-[9] h-[3px] rounded-full ${
+                          tc.isDark
+                            ? "bg-blue-400 shadow-[0_0_16px_4px_rgba(96,165,250,0.55)]"
+                            : "bg-blue-500 shadow-[0_0_18px_5px_rgba(59,130,246,0.45)]"
+                        }`}
+                        style={{ filter: "blur(0.35px)" }}
+                        initial={{ top: "14%" }}
+                        animate={{ top: ["14%", "82%"] }}
+                        transition={{
+                          duration: 0.78,
+                          repeat: Infinity,
+                          repeatType: "reverse",
+                          ease: "easeInOut",
+                        }}
+                      />
+                    </>
+                  )}
+                </div>
+
+                <div className="pointer-events-none absolute inset-0 z-10">
+                  <div className="absolute inset-3">
+                    <div
+                      className={`absolute left-0 top-0 h-14 w-14 rounded-tl-2xl border-t-[3px] border-l-[3px] ${
+                        tc.isDark ? "border-blue-400" : "border-blue-600"
+                      }`}
+                    />
+                    <div
+                      className={`absolute right-0 top-0 h-14 w-14 rounded-tr-2xl border-t-[3px] border-r-[3px] ${
+                        tc.isDark ? "border-blue-400" : "border-blue-600"
+                      }`}
+                    />
+                    <div
+                      className={`absolute bottom-0 left-0 h-14 w-14 rounded-bl-2xl border-b-[3px] border-l-[3px] ${
+                        tc.isDark ? "border-blue-400" : "border-blue-600"
+                      }`}
+                    />
+                    <div
+                      className={`absolute right-0 bottom-0 h-14 w-14 rounded-br-2xl border-b-[3px] border-r-[3px] ${
+                        tc.isDark ? "border-blue-400" : "border-blue-600"
+                      }`}
+                    />
+                    <div
+                      className={`absolute top-0 left-14 right-14 border-t border-dashed ${
+                        tc.isDark ? "border-blue-400/55" : "border-blue-500/75"
+                      }`}
+                    />
+                    <div
+                      className={`absolute bottom-0 left-14 right-14 border-b border-dashed ${
+                        tc.isDark ? "border-blue-400/55" : "border-blue-500/75"
+                      }`}
+                    />
+                    <div
+                      className={`absolute left-0 top-14 bottom-14 border-l border-dashed ${
+                        tc.isDark ? "border-blue-400/55" : "border-blue-500/75"
+                      }`}
+                    />
+                    <div
+                      className={`absolute right-0 top-14 bottom-14 border-r border-dashed ${
+                        tc.isDark ? "border-blue-400/55" : "border-blue-500/75"
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <p className={`mt-6 max-w-[280px] text-center text-[0.875rem] leading-snug ${tc.subtext}`}>
+                {t("qrReaderScanningStatus")}
+              </p>
+            </div>
+
+            <div className="w-full shrink-0 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4">
+              <div
+                className={`flex flex-col items-center justify-center gap-2 py-1 ${tc.isDark ? "text-blue-400" : "text-blue-600"}`}
+              >
+                <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
+                <span className="text-[0.875rem] font-medium">{t("qrReaderDetecting")}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {processingStep !== null && (
-        <div className="fixed inset-0 z-40 sm:z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4 transition-opacity duration-300 ease-out">
-          <div className={`w-full max-w-sm sm:mx-4 rounded-t-2xl sm:rounded-2xl p-6 pb-24 sm:pb-6 ${tc.isDark ? "bg-slate-800 border border-slate-700" : "bg-white border border-slate-200"} shadow-xl`}>
+        <div className="fixed inset-0 z-40 sm:z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 transition-opacity duration-300 ease-out">
+          <div className={`w-full max-w-sm max-h-[min(90vh,640px)] overflow-y-auto rounded-2xl p-6 mx-auto ${tc.isDark ? "bg-slate-800 border border-slate-700" : "bg-white border border-slate-200"} shadow-xl`}>
             <div className="flex items-center gap-3 mb-4">
               {failure && processingStep === failure.idx ? (
                 <div className="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center">
