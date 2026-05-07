@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { RouterProvider } from "react-router";
 import { router } from "./routes";
+import { Analytics } from "@vercel/analytics/react";
 
 function HydrateFallback() {
   const { t } = useTranslation("common");
@@ -13,5 +14,10 @@ function HydrateFallback() {
 }
 
 export default function App() {
-  return <RouterProvider router={router} hydrateFallbackElement={<HydrateFallback />} />;
+  return (
+    <>
+      <RouterProvider router={router} hydrateFallbackElement={<HydrateFallback />} />
+      <Analytics />
+    </>
+  );
 }
